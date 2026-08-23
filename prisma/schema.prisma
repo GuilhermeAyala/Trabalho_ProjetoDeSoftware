@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Doador {
+  id Int @id @default(autoincrement())
+  nome String
+  cpf String
+  sexo String
+  tipoSanguineo String
+
+  agendamento Agendamento[] // isso significa que um doador pode ter varios agendamentos
+}
+
+model Hemocentro {
+  id Int @id @default(autoincrement())
+  nome String
+  endereco String
+  latitude Float
+  longitude Float
+
+  agendamento Agendamento[] //agendamento tambem ligado ao Hemocentro
+  estoque Estoque[] //estoque ligado ao hemocentro
+}
+//n acq vá precisar de latitude e longitude, ainda mais se usar api de cep ou algo assim, inclusive
+//pode ser interessante tirar e colocar uma api de cep, sla
+
+model Agendamento {
+  id Int @id @default(autoincrement())
+  data DateTime
+  horario String
+  status String
+  doadorId Int
+  doador Doador @relation(fields: [doadorId], references: [id])
+  hemocentroId Int
+  hemocentro Hemocentro @relation(fields: [hemocentroId], references: [id])
+}
+
+model Estoque {
+  id Int @id @default(autoincrement())
+  tipoSanguineo String
+  nivel String
+  hemocentroId Int
+  hemocentro Hemocentro @relation(fields: [hemocentroId], references: [id])
+}
