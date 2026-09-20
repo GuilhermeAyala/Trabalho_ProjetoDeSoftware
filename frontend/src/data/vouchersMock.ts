@@ -1,0 +1,49 @@
+import { colors } from '@/theme';
+import type { Voucher } from '@/types/domain';
+
+export const vouchersMock: Voucher[] = [
+  {
+    id: 'mcdonalds-10',
+    brand: "McDonald's",
+    title: 'R$10 de desconto',
+    tag: 'R$10 OFF',
+    expiresAt: '15/12/2025',
+    acquiredAt: '15/10/2025',
+    code: 'MC10FRH12',
+    accentColor: '#FF1616',
+    iconName: 'fast-food',
+  },
+  {
+    id: 'amazon-frete',
+    brand: 'Amazon',
+    title: 'Frete grátis',
+    tag: 'FRETE OFF',
+    expiresAt: '10/01/2026',
+    acquiredAt: '11/10/2025',
+    code: 'AMZFREE25',
+    accentColor: colors.black,
+    iconName: 'logo-amazon',
+  },
+  {
+    id: 'uber-7',
+    brand: 'UBER',
+    title: 'R$7 de desconto',
+    tag: 'FRETE OFF',
+    expiresAt: '12/12/2025',
+    acquiredAt: '01/10/2025',
+    code: 'UBERDOE7',
+    accentColor: colors.black,
+    iconName: 'car',
+  },
+  {
+    id: 'mercado-livre-10',
+    brand: 'Mercado Livre',
+    title: '10% de desconto',
+    tag: 'FRETE OFF',
+    expiresAt: '30/12/2025',
+    acquiredAt: '25/09/2025',
+    code: 'MLDOE10',
+    accentColor: '#0031AC',
+    iconName: 'pricetag',
+  },
+];

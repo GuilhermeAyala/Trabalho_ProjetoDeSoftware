@@ -1,0 +1,1 @@
+{"version":3,"file":"DonationTimelineItem.d.ts","sourceRoot":"","sources":["DonationTimelineItem.tsx"],"names":[],"mappings":"AAIA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,gBAAgB,CAAC;AAE1D,KAAK,yBAAyB,GAAG;IAC/B,IAAI,EAAE,mBAAmB,CAAC;IAC1B,MAAM,CAAC,EAAE,OAAO,CAAC;CAClB,CAAC;AAEF,wBAAgB,oBAAoB,CAAC,EAAE,IAAI,EAAE,MAAM,EAAE,EAAE,yBAAyB,2CA4B/E"}

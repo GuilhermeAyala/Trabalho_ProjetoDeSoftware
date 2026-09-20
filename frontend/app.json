@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "VITTA",
+    "slug": "vitta",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "vitta",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#EA383F"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

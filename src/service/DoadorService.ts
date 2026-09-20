@@ -14,7 +14,13 @@ interface DoadorDTO {
 }
 
 export class DoadorService {
-    validarDoador(dados: DoadorDTO): boolean {
+    public doadorRepository: DoadorRepository
+
+    constructor(){
+        this.doadorRepository = new DoadorRepository;
+    }
+
+    async validarDoador(dados: DoadorDTO) {
         const sexosPermitidos: Sexo[] = ["Masculino", "Feminino", "Não identificar"];
         const tiposSanguineosPermitidos: TipoSanguineo[] = [
         "A+",
@@ -39,13 +45,18 @@ export class DoadorService {
             throw new Error("Tipo de Sangue precisa ser igual aos já definidos")
         }
 
-        return true; 
-        //continuar as validação 
+        return this.doadorRepository.adicionarDoador(dados)
+
     }
 
-    criarDoador(dados: DoadorDTO){
-        if(this.validarDoador(dados)){
-            //criar o doador
+     async atualizarDoador(id: number, dados: DoadorDTO){
+        if(await this.validarDoador(dados)){
+            return this.doadorRepository.atualizarDoador(id, dados);
         }
     }
+
+    async deletarDoador(id: number){
+        return this.doadorRepository.deletarDoador(id);
+    }
+
 }

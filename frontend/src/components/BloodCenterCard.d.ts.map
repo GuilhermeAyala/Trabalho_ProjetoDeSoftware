@@ -1,0 +1,1 @@
+{"version":3,"file":"BloodCenterCard.d.ts","sourceRoot":"","sources":["BloodCenterCard.tsx"],"names":[],"mappings":"AAIA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,gBAAgB,CAAC;AAGlD,KAAK,oBAAoB,GAAG;IAC1B,WAAW,EAAE,WAAW,CAAC;IACzB,UAAU,CAAC,EAAE,MAAM,IAAI,CAAC;CACzB,CAAC;AAEF,wBAAgB,eAAe,CAAC,EAAE,WAAW,EAAE,UAAU,EAAE,EAAE,oBAAoB,2CAyBhF"}

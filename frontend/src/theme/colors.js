@@ -1,0 +1,38 @@
+export const colors = {
+    primary: {
+        100: '#FFDCDC',
+        200: '#FBB0B0',
+        300: '#F97272',
+        400: '#EA383F',
+        500: '#A91313',
+        600: '#890B0B',
+        700: '#350202',
+    },
+    secondary: {
+        100: '#FEE8E0',
+        200: '#FDB48D',
+        300: '#F28A1D',
+        400: '#EA661F',
+        500: '#82470C',
+    },
+    tertiary: {
+        100: '#FEECF1',
+        400: '#EA1F84',
+    },
+    success: '#0ACF83',
+    info: '#30C98E',
+    white: '#FFFFFF',
+    black: '#000101',
+    text: {
+        strong: '#323232',
+        muted: '#756868',
+        inverse: '#FFFFFF',
+        menu: '#890B0B',
+    },
+    border: '#E5E3E3',
+    fieldBorder: '#ECE6E6',
+    background: '#FFFFFF',
+    softPrimary: '#FFF0EE',
+    shadow: '#000000',
+};
+//# sourceMappingURL=colors.js.map
