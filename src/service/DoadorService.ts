@@ -3,7 +3,7 @@ import { DoadorRepository } from "../repository/DoadorRepository";
 type Sexo = "Masculino" | "Feminino" | "Não identificar";
 type TipoSanguineo  = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
 
-interface DoadorDTO {
+export interface DoadorDTO {
     nome: String;
     email: String;
     sexo: Sexo;
@@ -49,7 +49,7 @@ export class DoadorService {
 
     }
 
-     async atualizarDoador(id: number, dados: DoadorDTO){
+    async atualizarDoador(id: number, dados: DoadorDTO){
         if(await this.validarDoador(dados)){
             return this.doadorRepository.atualizarDoador(id, dados);
         }
