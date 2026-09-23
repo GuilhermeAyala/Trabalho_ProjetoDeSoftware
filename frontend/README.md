@@ -20,3 +20,6 @@ npm expo start - pra rodar o código
 ```
 
 O backend em `../src` e a pasta `../prisma` não são usados nem modificados por este frontend.
+
+Link do deploy caso haja problemas em achar - deploy front
+Link - https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg
