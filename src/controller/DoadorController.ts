@@ -1,25 +1,99 @@
-import {Request, Response} from "express";
-import { DoadorService, DoadorDTO } from "../service/DoadorService";
+import { Request, Response } from "express";
+import { DoadorService } from "../service/DoadorService";
+import type { DoadorDTO } from "../dto/DoadorDTO";
 
 export class DoadorController {
-    //cuida de status de criação, 204, 404, etc 
-    //vai retornar requisição e resposta
-    public DoadorService: DoadorService
-    public DoadorDTO: DoadorDTO
+    public doadorService: DoadorService;
 
     constructor(){
-        this.DoadorService = new DoadorService
-        this.DoadorDTO = new DoadorDTO
+        this.doadorService = new DoadorService();
     }
 
     async criarDoador(req: Request, res: Response){
         try {
             const dadosDoador: DoadorDTO = req.body;
-            const response = await this.DoadorService.validarDoador(this.DoadorDTO)
-            return res.status(201).json({message: `Doador criado com sucesso`})
+            const doador = await this.doadorService.criarDoador(dadosDoador);
+
+            return res.status(201).json({
+                message: "Doador criado com sucesso",
+                doador,
+            });
         } catch (error) {
-            return res.status(400).json({message: error})
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
+    async atualizarDoador(req: Request, res: Response){
+        try {
+            const id = Number(req.params.id);
+            const dadosDoador: DoadorDTO = req.body;
+
+            if(Number.isNaN(id)){
+                return res.status(400).json({ message: "Id inválido" });
+            }
+
+            const doador = await this.doadorService.atualizarDoador(id, dadosDoador);
+
+            return res.status(200).json({
+                message: "Doador atualizado com sucesso",
+                doador,
+            });
+        } catch (error) {
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
+    async deletarDoador(req: Request, res: Response){
+        try {
+            const id = Number(req.params.id);
+
+            if(Number.isNaN(id)){
+                return res.status(400).json({ message: "Id inválido" });
+            }
+
+            await this.doadorService.deletarDoador(id);
+
+            return res.status(204).send();
+        } catch (error) {
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
+    async buscarDoador(req: Request, res: Response){
+        try {
+            const id = Number(req.params.id);
+
+            if(Number.isNaN(id)){
+                return res.status(400).json({ message: "Id inválido" });
+            }
+
+            const doador = await this.doadorService.buscarDoador(id);
+
+            if(!doador){
+                return res.status(404).json({ message: "Doador não encontrado" });
+            }
+
+            return res.status(200).json(doador);
+        } catch (error) {
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
+    async listarDoadores(_req: Request, res: Response){
+        try {
+            const doadores = await this.doadorService.listarDoadores();
+
+            return res.status(200).json(doadores);
+        } catch (error) {
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
+    private getErrorMessage(error: unknown): string {
+        if(error instanceof Error){
+            return error.message;
         }
 
-    }//lógica parece incorreta, verificar se o DTO de fato está funcionando aqui
+        return "Erro inesperado";
+    }
 }

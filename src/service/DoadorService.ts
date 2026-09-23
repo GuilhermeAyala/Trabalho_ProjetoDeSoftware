@@ -1,37 +1,28 @@
 import { DoadorRepository } from "../repository/DoadorRepository";
+import type { DoadorDTO, Sexo, TipoSanguineo } from "../dto/DoadorDTO";
 
-type Sexo = "Masculino" | "Feminino" | "Não identificar";
-type TipoSanguineo  = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
-
-export interface DoadorDTO {
-    nome: String;
-    email: String;
-    sexo: Sexo;
-    tipoSanguineo: TipoSanguineo;
-    //verificar se há necessidade de fazer dessa forma, devido ao prisma já estar com tipagem
-    //Independe de qualquer coisa, DTO é necessário para proteção das informações
-    //Verificar quais são sensiveis e não sensiveis para colocar ou não no DTO
-}
+export type { DoadorDTO } from "../dto/DoadorDTO";
 
 export class DoadorService {
-    public doadorRepository: DoadorRepository
+    public doadorRepository: DoadorRepository;
 
     constructor(){
-        this.doadorRepository = new DoadorRepository;
+        this.doadorRepository = new DoadorRepository();
     }
 
-    async validarDoador(dados: DoadorDTO) {
+    validarDoador(dados: DoadorDTO): boolean {
         const sexosPermitidos: Sexo[] = ["Masculino", "Feminino", "Não identificar"];
         const tiposSanguineosPermitidos: TipoSanguineo[] = [
-        "A+",
-        "A-",
-        "B+",
-        "B-",
-        "AB+",
-        "AB-",
-        "O+",
-        "O-",
-    ];
+            "A+",
+            "A-",
+            "B+",
+            "B-",
+            "AB+",
+            "AB-",
+            "O+",
+            "O-",
+        ];
+
         if(!dados.nome || !dados.email || !dados.sexo || !dados.tipoSanguineo){
             throw new Error("OS dados devem existir para a criação do doados")
         }
@@ -45,12 +36,17 @@ export class DoadorService {
             throw new Error("Tipo de Sangue precisa ser igual aos já definidos")
         }
 
-        return this.doadorRepository.adicionarDoador(dados)
+        return true;
+    }
 
+    async criarDoador(dados: DoadorDTO){
+        if(this.validarDoador(dados)){
+            return this.doadorRepository.adicionarDoador(dados);
+        }
     }
 
     async atualizarDoador(id: number, dados: DoadorDTO){
-        if(await this.validarDoador(dados)){
+        if(this.validarDoador(dados)){
             return this.doadorRepository.atualizarDoador(id, dados);
         }
     }
@@ -59,4 +55,11 @@ export class DoadorService {
         return this.doadorRepository.deletarDoador(id);
     }
 
+    async buscarDoador(id: number){
+        return this.doadorRepository.findDoador(id);
+    }
+
+    async listarDoadores(){
+        return this.doadorRepository.findAll();
+    }
 }

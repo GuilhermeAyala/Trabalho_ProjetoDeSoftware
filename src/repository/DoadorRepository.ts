@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import type { DoadorDTO } from "../dto/DoadorDTO";
 
 const prisma = new PrismaClient();
 
@@ -6,22 +7,22 @@ const prisma = new PrismaClient();
 
 export class DoadorRepository{
 
-    async adicionarDoador(novoDoador: any){
+    async adicionarDoador(novoDoador: DoadorDTO){
         return prisma.doador.create({
-        data: novoDoador
+            data: novoDoador
         })
     }
 
-    async atualizarDoador(id: number, newData: any){
+    async atualizarDoador(id: number, newData: DoadorDTO){
         return prisma.doador.update({
-        where: {id},
-        data: newData
+            where: {id},
+            data: newData
         })
     }
 
     async deletarDoador(id: number){
         return prisma.doador.delete({
-        where:{id}
+            where: {id}
         })
     }
 
@@ -31,10 +32,7 @@ export class DoadorRepository{
         })
     }
 
-    async findAll(id: number){
-        return prisma.doador.findMany({
-            where: {id}
-        });//analisar essa lógica posteriormente
+    async findAll(){
+        return prisma.doador.findMany();
     }
 }
-
