@@ -60,3 +60,6 @@ CREATE NEW DATABASE:
   Cloud: npx create-db (creates a free Prisma Postgres database)
 
 Then, define your models in prisma/schema.prisma and run prisma migrate dev to apply your schema.
+
+### Link do deploy caso haja problemas em achar
+Link - https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg
