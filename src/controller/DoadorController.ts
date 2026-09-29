@@ -89,6 +89,25 @@ export class DoadorController {
         }
     }
 
+    async confirmarDoacao(req: Request, res: Response){
+        try {
+            const id = Number(req.params.id);
+
+            if(Number.isNaN(id)){
+                return res.status(400).json({ message: "Id inválido" });
+            }
+
+            const doador = await this.doadorService.confirmarDoacao(id);
+
+            return res.status(200).json({
+                message: "Doação confirmada e 50 pontos adicionados",
+                doador,
+            });
+        } catch (error) {
+            return res.status(400).json({ message: this.getErrorMessage(error) });
+        }
+    }
+
     private getErrorMessage(error: unknown): string {
         if(error instanceof Error){
             return error.message;

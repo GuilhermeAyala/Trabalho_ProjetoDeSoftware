@@ -9,5 +9,6 @@ doadorRoutes.get("/doadores", (req, res) => doadorController.listarDoadores(req,
 doadorRoutes.get("/doadores/:id", (req, res) => doadorController.buscarDoador(req, res));
 doadorRoutes.put("/doadores/:id", (req, res) => doadorController.atualizarDoador(req, res));
 doadorRoutes.delete("/doadores/:id", (req, res) => doadorController.deletarDoador(req, res));
+doadorRoutes.post("/doadores/:id/doacoes/confirmar", (req, res) => doadorController.confirmarDoacao(req, res));
 
 export { doadorRoutes };

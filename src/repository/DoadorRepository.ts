@@ -20,6 +20,19 @@ export class DoadorRepository{
         })
     }
 
+    // Incremento atômico: cada confirmação adiciona os pontos sem sobrescrever
+    // alterações feitas por outra operação simultânea.
+    async adicionarPontosPorDoacaoConfirmada(id: number, pontos: number){
+        return prisma.doador.update({
+            where: { id },
+            data: {
+                pontosDoacao: {
+                    increment: pontos,
+                },
+            },
+        });
+    }
+
     async deletarDoador(id: number){
         return prisma.doador.delete({
             where: {id}

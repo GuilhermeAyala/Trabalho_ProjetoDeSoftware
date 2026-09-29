@@ -4,6 +4,7 @@ import type { DoadorDTO, Sexo, TipoSanguineo } from "../dto/DoadorDTO";
 export type { DoadorDTO } from "../dto/DoadorDTO";
 
 export class DoadorService {
+    static readonly PONTOS_POR_DOACAO = 50;
     public doadorRepository: DoadorRepository;
 
     constructor(){
@@ -61,5 +62,23 @@ export class DoadorService {
 
     async listarDoadores(){
         return this.doadorRepository.findAll();
+    }
+
+    // Regra de negócio: uma doação confirmada vale 50 pontos.
+    ganharPontos(pontosAtuais: number, doacaoConfirmada: boolean): number {
+        if (!Number.isInteger(pontosAtuais) || pontosAtuais < 0) {
+            throw new Error("A pontuação atual deve ser um número inteiro não negativo");
+        }
+
+        return doacaoConfirmada
+            ? pontosAtuais + DoadorService.PONTOS_POR_DOACAO
+            : pontosAtuais;
+    }
+
+    async confirmarDoacao(id: number){
+        return this.doadorRepository.adicionarPontosPorDoacaoConfirmada(
+            id,
+            DoadorService.PONTOS_POR_DOACAO,
+        );
     }
 }
