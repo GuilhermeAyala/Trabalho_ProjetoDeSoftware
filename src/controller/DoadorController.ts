@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { DoadorService } from "../service/DoadorService";
-import type { DoadorDTO } from "../dto/DoadorDTO";
+import type { DadosCriacaoDoador, DoadorDTO } from "../dto/DoadorDTO";
 
 export class DoadorController {
     public doadorService: DoadorService;
@@ -11,7 +11,9 @@ export class DoadorController {
 
     async criarDoador(req: Request, res: Response){
         try {
-            const dadosDoador: DoadorDTO = req.body;
+            // Cadastro: aqui entram CPF, senha e data de nascimento.
+            // A resposta recebida do service já vem sem esses campos.
+            const dadosDoador: DadosCriacaoDoador = req.body;
             const doador = await this.doadorService.criarDoador(dadosDoador);
 
             return res.status(201).json({
@@ -26,6 +28,7 @@ export class DoadorController {
     async atualizarDoador(req: Request, res: Response){
         try {
             const id = Number(req.params.id);
+            // Atualização do perfil: usa apenas o DTO público.
             const dadosDoador: DoadorDTO = req.body;
 
             if(Number.isNaN(id)){

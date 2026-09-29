@@ -20,7 +20,7 @@ model Doador {
   cpf String
   sexo String
   tipoSanguineo String
-  pontosDoacao Int @default(0)
+  pontosDoacao Int
 
   agendamento Agendamento[] // isso significa que um doador pode ter varios agendamentos
 }

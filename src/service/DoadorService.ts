@@ -1,10 +1,10 @@
 import { DoadorRepository } from "../repository/DoadorRepository";
-import type { DoadorDTO, Sexo, TipoSanguineo } from "../dto/DoadorDTO";
+import type { DadosCriacaoDoador, DoadorDTO, Sexo, TipoSanguineo } from "../dto/DoadorDTO";
 
 export type { DoadorDTO } from "../dto/DoadorDTO";
 
 export class DoadorService {
-    static readonly PONTOS_POR_DOACAO = 50;
+    static readonly PONTOS_POR_DOACAO = 50; //constante para ganho de pontos ao realizar a doação
     public doadorRepository: DoadorRepository;
 
     constructor(){
@@ -40,7 +40,7 @@ export class DoadorService {
         return true;
     }
 
-    async criarDoador(dados: DoadorDTO){
+    async criarDoador(dados: DadosCriacaoDoador){
         if(this.validarDoador(dados)){
             return this.doadorRepository.adicionarDoador(dados);
         }
