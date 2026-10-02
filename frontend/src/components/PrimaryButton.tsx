@@ -3,21 +3,25 @@ import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 import { colors, typography } from '@/theme';
 
 type PrimaryButtonProps = {
+  disabled?: boolean;
   label: string;
   onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'light';
   style?: ViewStyle;
 };
 
-export function PrimaryButton({ label, onPress, variant = 'primary', style }: PrimaryButtonProps) {
+export function PrimaryButton({ disabled = false, label, onPress, variant = 'primary', style }: PrimaryButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
         styles[variant],
         pressed && styles.pressed,
+        disabled && styles.disabled,
         style,
       ]}
     >
@@ -33,6 +37,9 @@ const styles = StyleSheet.create({
     height: 52,
     justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  disabled: {
+    opacity: 0.55,
   },
   label: {
     color: colors.text.inverse,

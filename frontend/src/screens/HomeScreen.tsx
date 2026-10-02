@@ -41,6 +41,10 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.quickActions}>
+          <PrimaryButton
+            label="REALIZAR TRIAGEM"
+            onPress={() => navigation.navigate('Triage', { doadorId: userMock.id })}
+          />
           <PrimaryButton label="AGENDAR DOACAO" onPress={() => navigation.navigate('AppTabs', { screen: 'Schedule' })} />
           <PrimaryButton
             label="CENTRAL DE INFORMACOES"

@@ -81,4 +81,15 @@ export class DoadorService {
             DoadorService.PONTOS_POR_DOACAO,
         );
     }
+
+    async agendarDoacao(){
+        
+    }
+
+    async realizarTriagem(){
+
+    }
 }
+
+//agendar doação, triagem no app; consultar hemocentro
+//não sei se seria pelo service do doador, pensar sobre

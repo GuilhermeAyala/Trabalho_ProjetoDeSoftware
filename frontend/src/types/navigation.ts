@@ -15,5 +15,6 @@ export type RootStackParamList = {
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
   DonationHistory: undefined;
   InformationCenter: undefined;
+  Triage: { doadorId: number };
   VoucherDetails: { voucher: Voucher };
 };

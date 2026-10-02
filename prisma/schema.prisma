@@ -3,8 +3,8 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  // O gerador padrão mantém o import simples: @prisma/client.
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -12,47 +12,71 @@ datasource db {
 }
 
 model Doador {
-  id Int @id @default(autoincrement())
-  nome String
-  email String
+  id             Int      @id @default(autoincrement())
+  nome           String
+  email          String
   DataNascimento DateTime
-  password String
-  cpf String
-  sexo String
-  tipoSanguineo String
-  pontosDoacao Int
+  password       String
+  cpf            String
+  sexo           String
+  tipoSanguineo  String
+  pontosDoacao   Int      @default(0)
 
   agendamento Agendamento[] // isso significa que um doador pode ter varios agendamentos
+  triagens    Triagem[]
 }
 
 model Hemocentro {
-  id Int @id @default(autoincrement())
-  nome String
-  endereco String
-  latitude Float
+  id        Int    @id @default(autoincrement())
+  nome      String
+  endereco  String
+  latitude  Float
   longitude Float
 
   agendamento Agendamento[] //agendamento tambem ligado ao Hemocentro
-  estoque Estoque[] //estoque ligado ao hemocentro
+  estoque     Estoque[] //estoque ligado ao hemocentro
 }
+
 //n acq vá precisar de latitude e longitude, ainda mais se usar api de cep ou algo assim, inclusive
 //pode ser interessante tirar e colocar uma api de cep, sla
 
 model Agendamento {
-  id Int @id @default(autoincrement())
-  data DateTime
-  horario String
-  status String
-  doadorId Int
-  doador Doador @relation(fields: [doadorId], references: [id])
+  id           Int        @id @default(autoincrement())
+  data         DateTime
+  horario      String
+  status       String     @default("AGENDADO")
+  criadoEm     DateTime   @default(now())
+  doadorId     Int
+  doador       Doador     @relation(fields: [doadorId], references: [id])
   hemocentroId Int
-  hemocentro Hemocentro @relation(fields: [hemocentroId], references: [id])
+  hemocentro   Hemocentro @relation(fields: [hemocentroId], references: [id])
+
+  // Agendamentos duplicados são validados no service. Uma restrição única no
+  // banco será adicionada quando o modelo de Slot/Vaga estiver definido.
+}
+
+// A triagem do app é preliminar. Ela orienta o doador, mas não substitui
+// a avaliação clínica presencial realizada pelo hemocentro.
+model Triagem {
+  id                              Int      @id @default(autoincrement())
+  doadorId                        Int
+  doador                          Doador   @relation(fields: [doadorId], references: [id])
+  estaEmBoasCondicoesDeSaude      Boolean
+  pesaNoMinimo50Kg                Boolean
+  dormiuPeloMenosSeisHoras        Boolean
+  estaAlimentado                  Boolean
+  consumiuAlcoolNasUltimas12Horas Boolean
+  possuiSintomasInfecciosos       Boolean
+  fezProcedimentoDeRiscoRecente   Boolean
+  apto                            Boolean
+  motivosInaptidao                String[]
+  realizadaEm                     DateTime @default(now())
 }
 
 model Estoque {
-  id Int @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   tipoSanguineo String
-  nivel String
-  hemocentroId Int
-  hemocentro Hemocentro @relation(fields: [hemocentroId], references: [id])
+  nivel         String
+  hemocentroId  Int
+  hemocentro    Hemocentro @relation(fields: [hemocentroId], references: [id])
 }
