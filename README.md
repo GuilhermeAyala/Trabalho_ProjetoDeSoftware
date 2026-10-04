@@ -11,6 +11,10 @@ Protótipo no Figma: https://www.figma.com/proto/NkLFRu8mj07xEIGy3b4ddk/VITTA?no
 6 - npm install prisma @types/pg --save-dev 
 7 - npm install @prisma/client @prisma/adapter-pg pg dotenv
 
+## Instruçõs pra rodar o react native/Metro
+1 - entre na pasta frontend com cd frontend
+2- digite npx expo start 
+
 ## Instrução para rodar o backend
 1 - entre na pasta src, com cd src
 2 - digite npm run dev

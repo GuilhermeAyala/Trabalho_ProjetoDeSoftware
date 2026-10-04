@@ -11,6 +11,7 @@ import { InformationCenterScreen } from '@/screens/InformationCenterScreen';
 import { ScheduleScreen } from '@/screens/ScheduleScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
+import { TriageScreen } from '@/screens/TriageScreen';
 import { VoucherDetailsScreen } from '@/screens/VoucherDetailsScreen';
 import { WalletScreen } from '@/screens/WalletScreen';
 import { colors, typography } from '@/theme';
@@ -74,6 +75,7 @@ export function RootNavigator() {
         <Stack.Screen component={AppTabs} name="AppTabs" />
         <Stack.Screen component={DonationHistoryScreen} name="DonationHistory" />
         <Stack.Screen component={InformationCenterScreen} name="InformationCenter" />
+        <Stack.Screen component={TriageScreen} name="Triage" />
         <Stack.Screen component={VoucherDetailsScreen} name="VoucherDetails" />
       </Stack.Navigator>
     </NavigationContainer>
