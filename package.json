@@ -22,7 +22,7 @@
   "homepage": "https://github.com/GuilhermeAyala/Trabalho_ProjetoDeSoftware#readme",
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
     "prisma": "^7.9.1",
     "tsx": "^4.23.12",

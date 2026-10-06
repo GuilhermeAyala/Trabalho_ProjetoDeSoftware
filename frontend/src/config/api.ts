@@ -7,3 +7,9 @@ const enderecoLocal = Platform.OS === 'android'
   : 'http://localhost:3000';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? enderecoLocal).replace(/\/$/, '');
+
+// Identidade temporária do protótipo até o login fornecer o id da sessão.
+const doadorIdConfigurado = Number(process.env.EXPO_PUBLIC_DOADOR_ID ?? 1);
+export const CURRENT_DONOR_ID = Number.isInteger(doadorIdConfigurado) && doadorIdConfigurado > 0
+  ? doadorIdConfigurado
+  : 1;
