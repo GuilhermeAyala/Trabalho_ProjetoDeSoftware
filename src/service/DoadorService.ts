@@ -11,7 +11,7 @@ export class DoadorService {
         this.doadorRepository = new DoadorRepository();
     }
 
-    validarDoador(dados: DoadorDTO): boolean {
+    validarDoador(dados: Omit<DoadorDTO, "pontosDoacao">): boolean {
         const sexosPermitidos: Sexo[] = ["Masculino", "Feminino", "Não identificar"];
         const tiposSanguineosPermitidos: TipoSanguineo[] = [
             "A+",

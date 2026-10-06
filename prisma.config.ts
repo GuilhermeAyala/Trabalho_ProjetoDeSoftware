@@ -10,6 +10,6 @@ export default defineConfig({
   },
   // A CLI do Prisma 7 lê a URL por este arquivo, não pelo schema.prisma.
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL ?? "",
   },
 });

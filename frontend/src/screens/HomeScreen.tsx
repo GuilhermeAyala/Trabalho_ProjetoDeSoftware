@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SectionTitle } from '@/components/SectionTitle';
+import { CURRENT_DONOR_ID } from '@/config/api';
 import { donationsMock } from '@/data/donationsMock';
 import { userMock } from '@/data/userMock';
 import { colors, spacing, typography } from '@/theme';
@@ -43,7 +44,7 @@ export function HomeScreen() {
         <View style={styles.quickActions}>
           <PrimaryButton
             label="REALIZAR TRIAGEM"
-            onPress={() => navigation.navigate('Triage', { doadorId: userMock.id })}
+            onPress={() => navigation.navigate('Triage', { doadorId: CURRENT_DONOR_ID })}
           />
           <PrimaryButton label="AGENDAR DOACAO" onPress={() => navigation.navigate('AppTabs', { screen: 'Schedule' })} />
           <PrimaryButton

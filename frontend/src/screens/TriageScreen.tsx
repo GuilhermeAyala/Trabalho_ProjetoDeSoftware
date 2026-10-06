@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { getApiErrorMessage } from '@/services/api';
 import { realizarTriagem } from '@/services/triageApi';
 import { colors, spacing, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
@@ -62,11 +63,7 @@ export function TriageScreen({ navigation, route }: Props) {
       setResult(response.resultado);
       setNotice(response.aviso);
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Não foi possível concluir a triagem.',
-      );
+      setError(getApiErrorMessage(requestError, 'Não foi possível concluir a triagem.'));
     } finally {
       setIsLoading(false);
     }

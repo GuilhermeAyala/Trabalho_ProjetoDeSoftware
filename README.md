@@ -55,6 +55,8 @@ Set up a new local Prisma Postgres `prisma dev`-ready project
       Display Prisma debug info
       $ prisma debug
 
+      npm i --save-dev @types/node
+
 2 - CONNECT EXISTING DATABASE:
   1. Configure your DATABASE_URL in prisma.config.ts
   2. Run prisma db pull to introspect your database.

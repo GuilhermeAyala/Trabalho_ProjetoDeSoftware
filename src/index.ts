@@ -12,14 +12,24 @@ const port = 3000;
 
 // Permite que o Expo Web acesse a API durante o desenvolvimento. Como não há
 // cookies ou credenciais neste protótipo, a origem pode ser aberta localmente.
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+
+  // O navegador envia OPTIONS antes de POSTs JSON. Encerrar a preflight aqui
+  // evita que o cliente HTTP bloqueie a triagem antes de chegar ao controller.
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
   next();
 });
 app.use(express.json());
-app.use("/doador", doadorRoutes);
+// Endpoint principal do perfil. A segunda montagem preserva a URL antiga para
+// não quebrar consumidores que ainda utilizem /doador/doadores.
+app.use("/doadores", doadorRoutes);
+app.use("/doador/doadores", doadorRoutes);
 app.use("/agendamentos", agendamentoRoutes);
 app.use("/hemocentros", hemocentroRoutes);
 app.use("/triagens", triagemRoutes);

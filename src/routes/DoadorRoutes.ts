@@ -4,11 +4,11 @@ import { DoadorController } from "../controller/DoadorController";
 const doadorRoutes = Router();
 const doadorController = new DoadorController();
 
-doadorRoutes.post("/doadores", (req, res) => doadorController.criarDoador(req, res));
-doadorRoutes.get("/doadores", (req, res) => doadorController.listarDoadores(req, res));
-doadorRoutes.get("/doadores/:id", (req, res) => doadorController.buscarDoador(req, res));
-doadorRoutes.put("/doadores/:id", (req, res) => doadorController.atualizarDoador(req, res));
-doadorRoutes.delete("/doadores/:id", (req, res) => doadorController.deletarDoador(req, res));
-doadorRoutes.post("/doadores/:id/doacoes/confirmar", (req, res) => doadorController.confirmarDoacao(req, res));
+doadorRoutes.post("/", (req, res) => doadorController.criarDoador(req, res));
+doadorRoutes.get("/", (req, res) => doadorController.listarDoadores(req, res));
+doadorRoutes.get("/:id", (req, res) => doadorController.buscarDoador(req, res));
+doadorRoutes.put("/:id", (req, res) => doadorController.atualizarDoador(req, res));
+doadorRoutes.delete("/:id", (req, res) => doadorController.deletarDoador(req, res));
+doadorRoutes.post("/:id/doacoes/confirmar", (req, res) => doadorController.confirmarDoacao(req, res));
 
 export { doadorRoutes };
