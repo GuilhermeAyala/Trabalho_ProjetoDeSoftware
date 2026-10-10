@@ -1,5 +1,5 @@
 node_modules/
 .env
 dist/
-.env.docker
+.env.docker.example
 /generated/prisma
