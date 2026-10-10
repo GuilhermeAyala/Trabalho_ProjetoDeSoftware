@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+!.env.docker.example
+.git
+.expo
+frontend/node_modules
+frontend/dist
+documentos

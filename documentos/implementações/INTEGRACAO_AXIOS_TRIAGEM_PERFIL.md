@@ -91,7 +91,7 @@ O backend usa a variável `DATABASE_URL` do arquivo `.env` da raiz. Como o Postg
 DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/ProjetoVitta?schema=public"
 ```
 
-O hostname `postgres` só deve ser usado quando backend e banco estiverem em serviços da mesma rede Docker Compose. O projeto ainda não possui essa configuração Docker.
+Como backend e banco executam localmente neste cenário, o host correto é `localhost`.
 
 Com o serviço PostgreSQL iniciado, execute o backend:
 

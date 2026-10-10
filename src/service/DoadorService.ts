@@ -86,9 +86,6 @@ export class DoadorService {
         
     }
 
-    async realizarTriagem(){
-
-    }
 }
 
 //agendar doação, triagem no app; consultar hemocentro
