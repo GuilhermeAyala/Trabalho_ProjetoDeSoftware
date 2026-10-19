@@ -25,6 +25,7 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-vitta}:${POSTGRES_PASSWORD:-vitta_dev}@postgres:5432/${POSTGRES_DB:-vitta}?schema=public
+      HEMOCENTRO_AUTH_SECRET: ${HEMOCENTRO_AUTH_SECRET:-vitta_dev_hemocentro_secret_change_me_2026}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:

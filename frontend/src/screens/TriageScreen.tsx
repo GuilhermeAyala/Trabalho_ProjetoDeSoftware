@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { useDonorSession } from '@/context/DonorSession';
 import { getApiErrorMessage } from '@/services/api';
 import { realizarTriagem } from '@/services/triageApi';
 import { colors, spacing, typography } from '@/theme';
@@ -29,6 +30,7 @@ const questions: { key: AnswerKey; text: string }[] = [
 ];
 
 export function TriageScreen({ navigation, route }: Props) {
+  const { sessao } = useDonorSession();
   const [answers, setAnswers] = useState<PartialAnswers>({});
   const [result, setResult] = useState<TriageResult | null>(null);
   const [notice, setNotice] = useState('');
@@ -55,8 +57,9 @@ export function TriageScreen({ navigation, route }: Props) {
     setError('');
 
     try {
-      const response = await realizarTriagem({
-        doadorId: route.params.doadorId,
+      if (!sessao) throw new Error('Entre na sua conta de doador para realizar a triagem.');
+      const response = await realizarTriagem(sessao.token, {
+        doadorId: sessao.doador.id,
         respostas: answers as TriageAnswers,
       });
 

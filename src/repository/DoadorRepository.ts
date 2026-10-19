@@ -45,19 +45,6 @@ export class DoadorRepository{
         });
     }
 
-    // Cada confirmação adiciona 50 pontos sem sobrescrever o valor atual.
-    async adicionarPontosPorDoacaoConfirmada(id: number, pontos: number){
-        return prisma.doador.update({
-            where: { id },
-            data: {
-                pontosDoacao: {
-                    increment: pontos,
-                },
-            },
-            select: this.camposPublicos,
-        });
-    }
-
     async deletarDoador(id: number){
         return prisma.doador.delete({
             where: { id },
@@ -65,10 +52,21 @@ export class DoadorRepository{
     }
 
     async findDoador(id: number){
-        return prisma.doador.findUnique({
+        const doador = await prisma.doador.findUnique({
             where: { id },
-            select: this.camposPublicos,
+            select: {
+                ...this.camposPublicos,
+                _count: {
+                    select: {
+                        agendamento: { where: { status: "REALIZADO" } },
+                    },
+                },
+            },
         });
+
+        if (!doador) return null;
+        const { _count, ...perfil } = doador;
+        return { ...perfil, doacoesRealizadas: _count.agendamento };
     }
 
     async findAll(){
