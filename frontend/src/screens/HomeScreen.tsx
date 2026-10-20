@@ -6,36 +6,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SectionTitle } from '@/components/SectionTitle';
-import { CURRENT_DONOR_ID } from '@/config/api';
-import { donationsMock } from '@/data/donationsMock';
-import { userMock } from '@/data/userMock';
+import { iniciaisDoador, useDonorSession } from '@/context/DonorSession';
+import { useDonorDonations } from '@/hooks/useDonorDonations';
+import { useRefreshDonorProfile } from '@/hooks/useRefreshDonorProfile';
 import { colors, spacing, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
 
 export function HomeScreen() {
+  useRefreshDonorProfile();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const lastDonation = donationsMock[0];
+  const { sessao } = useDonorSession();
+  const lastDonation = useDonorDonations()[0];
+  const primeiroNome = sessao?.doador.nome.trim().split(/\s+/)[0] ?? 'Doador';
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Ola, {userMock.name.split(' ')[0]}</Text>
+            <Text style={styles.greeting}>Olá, {primeiroNome}</Text>
             <Text style={styles.subtitle}>Pronto para salvar vidas hoje?</Text>
           </View>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userMock.initials}</Text>
+            <Text style={styles.avatarText}>{iniciaisDoador(sessao?.doador)}</Text>
           </View>
         </View>
 
         <View style={styles.pointsCard}>
           <View>
             <Text style={styles.pointsLabel}>Saldo de Pontos</Text>
-            <Text style={styles.points}>{userMock.points}</Text>
+            <Text style={styles.points}>{sessao?.doador.pontosDoacao ?? 0}</Text>
             <View style={styles.levelRow}>
               <Ionicons color={colors.white} name="trophy" size={20} />
-              <Text style={styles.level}>Nivel: {userMock.level}</Text>
+              <Text style={styles.level}>Nível do doador</Text>
             </View>
           </View>
           <Ionicons color={colors.white} name="trophy" size={112} style={styles.trophy} />
@@ -44,7 +47,7 @@ export function HomeScreen() {
         <View style={styles.quickActions}>
           <PrimaryButton
             label="REALIZAR TRIAGEM"
-            onPress={() => navigation.navigate('Triage', { doadorId: CURRENT_DONOR_ID })}
+            onPress={() => sessao && navigation.navigate('Triage', { doadorId: sessao.doador.id })}
           />
           <PrimaryButton label="AGENDAR DOACAO" onPress={() => navigation.navigate('AppTabs', { screen: 'Schedule' })} />
           <PrimaryButton
@@ -58,17 +61,17 @@ export function HomeScreen() {
         <View style={styles.impactGrid}>
           <View style={styles.impactCard}>
             <Ionicons color={colors.primary[400]} name="water" size={28} />
-            <Text style={styles.impactValue}>{userMock.donationsCount}</Text>
+            <Text style={styles.impactValue}>{sessao?.doador.doacoesRealizadas ?? 0}</Text>
             <Text style={styles.impactLabel}>Doacoes realizadas</Text>
           </View>
           <View style={styles.impactCard}>
             <Ionicons color={colors.success} name="trending-up" size={28} />
-            <Text style={styles.impactValue}>{userMock.totalPoints}</Text>
+            <Text style={styles.impactValue}>{sessao?.doador.pontosDoacao ?? 0}</Text>
             <Text style={styles.impactLabel}>Pontos ganhos</Text>
           </View>
         </View>
 
-        {lastDonation && (
+        {lastDonation ? (
           <View style={styles.lastDonation}>
             <View>
               <Text style={styles.lastTitle}>Ultima doacao</Text>
@@ -78,6 +81,11 @@ export function HomeScreen() {
               </Text>
             </View>
             <PrimaryButton label="HISTORICO" onPress={() => navigation.navigate('DonationHistory')} style={styles.smallButton} />
+          </View>
+        ) : (
+          <View style={styles.lastDonation}>
+            <Text style={styles.lastTitle}>Nenhuma doação realizada</Text>
+            <Text style={styles.lastMuted}>Quando o hemocentro confirmar uma doação, ela aparecerá aqui.</Text>
           </View>
         )}
       </ScrollView>

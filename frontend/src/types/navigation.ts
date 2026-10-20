@@ -6,12 +6,17 @@ export type AppTabParamList = {
   Home: undefined;
   BloodCenters: undefined;
   Wallet: undefined;
-  Schedule: undefined;
+  Schedule: { hemocentroId?: number } | undefined;
   Settings: undefined;
 };
 
 export type RootStackParamList = {
+  AccessChoice: undefined;
   SignUp: undefined;
+  DonorLogin: undefined;
+  HemocentroSignUp: undefined;
+  HemocentroLogin: undefined;
+  HemocentroTabs: undefined;
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
   DonationHistory: undefined;
   InformationCenter: undefined;

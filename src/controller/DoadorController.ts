@@ -1,12 +1,24 @@
 import { Request, Response } from "express";
 import { DoadorService } from "../service/DoadorService";
 import type { DadosCriacaoDoador, DoadorDTO } from "../dto/DoadorDTO";
+import { DoadorAuthService } from "../service/DoadorAuthService";
 
 export class DoadorController {
     public doadorService: DoadorService;
+    private readonly authService = new DoadorAuthService();
 
     constructor(){
         this.doadorService = new DoadorService();
+    }
+
+    async cadastrar(req: Request, res: Response) {
+        try { return res.status(201).json(await this.authService.cadastrar(req.body)); }
+        catch (error) { return res.status(400).json({ message: this.getErrorMessage(error) }); }
+    }
+
+    async entrar(req: Request, res: Response) {
+        try { return res.status(200).json(await this.authService.entrar(req.body.email, req.body.password)); }
+        catch (error) { return res.status(401).json({ message: this.getErrorMessage(error) }); }
     }
 
     async criarDoador(req: Request, res: Response){
@@ -87,25 +99,6 @@ export class DoadorController {
             const doadores = await this.doadorService.listarDoadores();
 
             return res.status(200).json(doadores);
-        } catch (error) {
-            return res.status(400).json({ message: this.getErrorMessage(error) });
-        }
-    }
-
-    async confirmarDoacao(req: Request, res: Response){
-        try {
-            const id = Number(req.params.id);
-
-            if(Number.isNaN(id)){
-                return res.status(400).json({ message: "Id inválido" });
-            }
-
-            const doador = await this.doadorService.confirmarDoacao(id);
-
-            return res.status(200).json({
-                message: "Doação confirmada e 50 pontos adicionados",
-                doador,
-            });
         } catch (error) {
             return res.status(400).json({ message: this.getErrorMessage(error) });
         }

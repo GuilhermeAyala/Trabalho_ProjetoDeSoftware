@@ -19,3 +19,23 @@ export interface AgendamentoDTO {
         endereco: string;
     };
 }
+
+/**
+ * Estados aceitos pela API para o ciclo de um agendamento.
+ * O Prisma ainda persiste o campo como String; esta união restringe o contrato
+ * HTTP enquanto não houver necessidade de criar um enum no banco.
+ */
+export const STATUS_AGENDAMENTO = [
+    "AGENDADO",
+    "CONFIRMADO",
+    "REALIZADO",
+    "CANCELADO",
+] as const;
+
+export type StatusAgendamento = typeof STATUS_AGENDAMENTO[number];
+
+export interface FiltrosAgendamentoHemocentroDTO {
+    status?: StatusAgendamento;
+    dataInicio?: Date;
+    dataFim?: Date;
+}

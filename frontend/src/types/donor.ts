@@ -5,4 +5,7 @@ export type DonorProfile = {
   sexo: string;
   tipoSanguineo: string;
   pontosDoacao: number;
+  doacoesRealizadas: number;
 };
+
+export type DonorSession = { doador: DonorProfile; token: string };

@@ -14,8 +14,8 @@ const port = 3000;
 // cookies ou credenciais neste protótipo, a origem pode ser aberta localmente.
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
 
   // O navegador envia OPTIONS antes de POSTs JSON. Encerrar a preflight aqui
   // evita que o cliente HTTP bloqueie a triagem antes de chegar ao controller.

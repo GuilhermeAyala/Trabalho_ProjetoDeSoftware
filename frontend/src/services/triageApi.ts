@@ -6,7 +6,7 @@ type RealizarTriagemInput = {
   respostas: TriageAnswers;
 };
 
-export async function realizarTriagem(input: RealizarTriagemInput): Promise<TriageResponse> {
-  const { data } = await api.post<TriageResponse>('/triagens', input);
+export async function realizarTriagem(token: string, input: RealizarTriagemInput): Promise<TriageResponse> {
+  const { data } = await api.post<TriageResponse>('/triagens', input, { headers: { Authorization: `Bearer ${token}` } });
   return data;
 }

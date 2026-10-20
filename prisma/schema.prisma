@@ -35,6 +35,16 @@ model Hemocentro {
 
   agendamento Agendamento[] //agendamento tambem ligado ao Hemocentro
   estoque     Estoque[] //estoque ligado ao hemocentro
+  conta       HemocentroConta?
+  vagas       Vaga[]
+}
+
+model HemocentroConta {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  senhaHash    String
+  hemocentroId Int        @unique
+  hemocentro   Hemocentro @relation(fields: [hemocentroId], references: [id])
 }
 
 //n acq vá precisar de latitude e longitude, ainda mais se usar api de cep ou algo assim, inclusive
@@ -50,9 +60,24 @@ model Agendamento {
   doador       Doador     @relation(fields: [doadorId], references: [id])
   hemocentroId Int
   hemocentro   Hemocentro @relation(fields: [hemocentroId], references: [id])
+  vagaId       Int?
+  vaga         Vaga?       @relation(fields: [vagaId], references: [id])
 
-  // Agendamentos duplicados são validados no service. Uma restrição única no
-  // banco será adicionada quando o modelo de Slot/Vaga estiver definido.
+  // vagaId é opcional para preservar agendamentos criados antes da introdução
+  // das vagas. Novos agendamentos exigem uma vaga aberta.
+}
+
+model Vaga {
+  id           Int           @id @default(autoincrement())
+  hemocentroId Int
+  hemocentro   Hemocentro    @relation(fields: [hemocentroId], references: [id])
+  data         DateTime
+  horario      String
+  capacidade   Int
+  reservadas   Int           @default(0)
+  agendamentos Agendamento[]
+
+  @@unique([hemocentroId, data, horario])
 }
 
 // A triagem do app é preliminar. Ela orienta o doador, mas não substitui
@@ -77,6 +102,20 @@ model Estoque {
   id            Int        @id @default(autoincrement())
   tipoSanguineo String
   nivel         String
+  quantidade    Int        @default(0)
   hemocentroId  Int
   hemocentro    Hemocentro @relation(fields: [hemocentroId], references: [id])
+  movimentacoes MovimentacaoEstoque[]
+
+  @@unique([hemocentroId, tipoSanguineo])
+}
+
+model MovimentacaoEstoque {
+  id         Int      @id @default(autoincrement())
+  estoqueId  Int
+  estoque    Estoque  @relation(fields: [estoqueId], references: [id])
+  tipo       String
+  quantidade Int
+  motivo     String
+  criadaEm   DateTime @default(now())
 }

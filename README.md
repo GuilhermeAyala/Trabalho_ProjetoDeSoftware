@@ -1,148 +1,180 @@
 # Projeto de Software: Sistema VITTA
 
-## Executar a aplicação completa (recomendado)
+O VITTA usa Docker Compose para executar o front-end, a API e o PostgreSQL juntos.
 
-O Docker Compose inicia, em conjunto, o front-end, a API e o PostgreSQL. Esse é o caminho recomendado para usar a aplicação inteira; não é necessário executar `npm run` em terminais separados.
+## Pré-requisitos
 
-### Pré-requisito
-
-Abra o Docker Desktop e espere ele indicar que está em execução. Confirme no PowerShell, na raiz deste repositório:
+Instale e abra o Docker Desktop. Espere o status indicar que ele está em execução e confirme, na raiz do repositório:
 
 ```powershell
 docker version
 docker compose version
 ```
 
-### Primeira execução
+## Comandos do Docker para o time
 
-1. Crie a configuração local do Docker (faça isso apenas uma vez):
+Execute os comandos abaixo na pasta raiz do projeto.
+
+### Primeira execução ou atualização completa
+
+Crie o arquivo de configuração local uma única vez:
 
 ```powershell
 Copy-Item .env.docker.example .env.docker
 ```
 
-2. Construa as imagens e inicie todos os serviços:
+Depois construa as imagens e inicie todos os serviços:
 
 ```powershell
-docker compose --env-file .env.docker up --build --detach --wait
+docker compose --env-file .env.docker up --build -d
 ```
 
-3. Confirme que os serviços estão em execução:
+Também funciona sem arquivo `.env.docker`, usando os valores padrão do `docker-compose.yml`:
 
 ```powershell
-docker compose --env-file .env.docker ps
+docker compose up --build -d
 ```
 
-O resultado deve mostrar `postgres` e `api` como `healthy` e o `frontend` como `running`.
+Use esse comando quando alguém alterar `Dockerfile`, `package.json`, dependências, schema Prisma ou código que será incluído nas imagens.
 
-Abra a aplicação em [http://localhost:8081](http://localhost:8081).
+### Conferir se iniciou corretamente
 
-- Front-end: `http://localhost:8081`
-- API: `http://localhost:3000`
+```powershell
+docker compose ps
+```
+
+O esperado é `postgres` e `api` como `healthy`, e `frontend` como `running`.
+
+Endereços locais:
+
+- Front-end: [http://localhost:8081](http://localhost:8081)
+- API: [http://localhost:3000](http://localhost:3000)
 - PostgreSQL: `localhost:5433`
 
-Na inicialização, a API aplica o schema do Prisma ao banco Docker e cria o doador de demonstração caso ele ainda não exista.
-
-### Próximas execuções
-
-Depois que as imagens já foram construídas, basta iniciar:
+### Iniciar novamente após usar `stop`
 
 ```powershell
-docker compose --env-file .env.docker.example up --detach --wait
+docker compose start
 ```
 
-Para acompanhar os logs enquanto usa a aplicação:
+Esse comando inicia os contêineres que já existem sem reconstruir imagens e preserva os dados do PostgreSQL.
 
-<<<<<<< Updated upstream
-### Link do deploy caso haja problemas em achar
-Link - https://trabalho-projeto-de-software.vercel.app/
-=======
+### Parar a aplicação e manter os dados
+
 ```powershell
-docker compose --env-file .env.docker logs --follow
+docker compose stop
 ```
 
-### Testes manuais rápidos
+Para retornar depois, use `docker compose start`.
+
+### Remover os contêineres e manter o banco
+
+```powershell
+docker compose down
+```
+
+Na próxima vez, execute `docker compose up -d` ou `docker compose up --build -d`. O volume `vitta_postgres_data` permanece, portanto os dados do banco são preservados.
+
+### Acompanhar logs
+
+Logs de todos os serviços:
+
+```powershell
+docker compose logs -f
+```
+
+Somente a API:
+
+```powershell
+docker compose logs -f api
+```
+
+Para sair dos logs, use `Ctrl + C`. Isso não interrompe os serviços.
+
+### Reiniciar um serviço específico
+
+Por exemplo, para reiniciar apenas a API:
+
+```powershell
+docker compose restart api
+```
+
+Após alterar o código da API, reconstrua somente esse serviço:
+
+```powershell
+docker compose up --build -d api
+```
+
+### Validar a aplicação
+
+Com a stack em execução, os comandos abaixo verificam a API, o front-end e o PostgreSQL:
 
 ```powershell
 curl.exe http://localhost:3000/
-curl.exe http://localhost:3000/doadores
+curl.exe http://localhost:3000/hemocentros
 curl.exe -I http://localhost:8081/
-docker compose --env-file .env.docker exec postgres pg_isready -U vitta -d vitta
+docker compose exec postgres pg_isready -U vitta -d vitta
 ```
 
-### Parar ou recriar
-
-Para parar a aplicação e manter os dados do PostgreSQL:
+Para executar a validação completa do fluxo de hemocentro, que cria e remove dados temporários de teste:
 
 ```powershell
-docker compose --env-file .env.docker.example down
+npm run test:e2e
 ```
 
-Para reconstruir as imagens após mudanças de dependências, Dockerfile ou código que será empacotado:
+Para os testes unitários e a compilação da API:
 
 ```powershell
-docker compose --env-file .env.docker up --build --detach --wait
+npm test
+npm run build
 ```
 
-`docker compose down -v` também apaga o volume do banco de dados. Use-o somente se quiser reiniciar o banco do zero.
-
-## Quando usar `npm run`
-
-Para executar a aplicação completa, use Docker Compose. Os comandos npm continuam úteis somente para desenvolvimento ou depuração de um serviço isolado:
-
-- API local: `npm run dev`
-- Validar/gerar a versão de produção da API: `npm run build`
-- Front-end fora do Docker: na pasta `frontend`, use `npm install` e `npx expo start`
-
-Ao executar serviços fora do Docker, configure uma `DATABASE_URL` local apropriada e não suba outra API na porta `3000` ao mesmo tempo que o Compose.
-
-## Uso em equipe e acesso externo
-
-### Cada integrante rodando localmente
-
-O modo mais simples para desenvolvimento é cada pessoa clonar o repositório e executar os comandos de Docker descritos acima. Cada computador terá sua própria API e seu próprio volume PostgreSQL; portanto, os dados de uma pessoa não são compartilhados automaticamente com o restante do time.
+Para verificar o TypeScript do front-end:
 
 ```powershell
-git clone https://github.com/GuilhermeAyala/Trabalho_ProjetoDeSoftware.git
-cd Trabalho_ProjetoDeSoftware
-Copy-Item .env.docker.example .env.docker
-docker compose --env-file .env.docker up --build --detach --wait
+Set-Location frontend
+npm run typecheck
+Set-Location ..
 ```
 
-### Acesso pela mesma rede Wi-Fi ou LAN
-
-Por padrão, `localhost` funciona apenas no computador que iniciou o Docker. Para permitir que outros dispositivos da mesma rede acessem sua instância, descubra o IPv4 da sua máquina:
+### Reiniciar o banco do zero
 
 ```powershell
-ipconfig
+docker compose down -v
 ```
 
-Procure o valor **Endereço IPv4** (por exemplo, `192.168.1.50`). No arquivo `.env.docker`, substitua a variável abaixo pelo IP encontrado:
+Esse comando remove o volume `vitta_postgres_data` e apaga todos os dados locais do PostgreSQL. Use apenas quando a equipe decidir descartar o banco local. Depois, execute:
+
+```powershell
+docker compose up --build -d
+```
+
+## Configuração para cada integrante
+
+Cada colega deve criar sua própria cópia de `.env.docker` a partir de `.env.docker.example`. Os serviços e o banco executados no computador de uma pessoa não são compartilhados automaticamente com as demais.
+
+Para abrir o front-end em outro dispositivo da mesma rede, encontre o IPv4 com `ipconfig`, altere `EXPO_PUBLIC_API_URL` em `.env.docker` para o IP da máquina, por exemplo:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.1.50:3000
 ```
 
-Depois reconstrua e inicie os serviços:
+Em seguida, reconstrua o front-end:
 
 ```powershell
-docker compose --env-file .env.docker up --build --detach --wait
+docker compose --env-file .env.docker up --build -d frontend
 ```
 
-Os dispositivos na mesma rede poderão abrir:
+O outro dispositivo poderá acessar `http://192.168.1.50:8081`. Se necessário, libere as portas `8081` e `3000` no Firewall do Windows.
 
-```text
-http://192.168.1.50:8081
-```
+## Problemas frequentes
 
-Se não funcionar, libere as portas `8081` (front-end) e `3000` (API) no Firewall do Windows. O IP usado na variável e no navegador deve ser o IPv4 real da máquina que executa o Docker.
-
-### Acesso pela internet
-
-Não use `localhost` nem o IP da rede local para disponibilizar o sistema fora da sua rede. Para isso, é necessário publicar a API e o banco em um servidor/cloud e gerar o front-end com a URL pública da API. Expor diretamente as portas do computador pelo roteador não é recomendado para este projeto.
+- `permission denied` ou erro de conexão ao Docker: abra o Docker Desktop e espere ele concluir a inicialização.
+- Porta `3000`, `5433` ou `8081` ocupada: pare o processo que usa a porta ou ajuste `API_PORT`, `POSTGRES_PORT` ou `FRONTEND_PORT` em `.env.docker`.
+- API não inicia depois de uma alteração no schema: confira `docker compose logs api`. O Compose sincroniza o schema com `prisma db push` e executa o seed durante a inicialização.
+- Não use `docker compose down -v` para uma simples parada: ele apaga o banco local.
 
 ## Links
 
 - Protótipo no Figma: https://www.figma.com/proto/NkLFRu8mj07xEIGy3b4ddk/VITTA?node-id=1-2&t=f3YzHBQHA5YRVyxG-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=1%3A2
 - Deploy: https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg
->>>>>>> Stashed changes

@@ -75,13 +75,6 @@ export class DoadorService {
             : pontosAtuais;
     }
 
-    async confirmarDoacao(id: number){
-        return this.doadorRepository.adicionarPontosPorDoacaoConfirmada(
-            id,
-            DoadorService.PONTOS_POR_DOACAO,
-        );
-    }
-
     async agendarDoacao(){
         
     }

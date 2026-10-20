@@ -5,13 +5,18 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VoucherCard } from '@/components/VoucherCard';
+import { useDonorSession } from '@/context/DonorSession';
 import { vouchersMock } from '@/data/vouchersMock';
-import { userMock } from '@/data/userMock';
+import { useRefreshDonorProfile } from '@/hooks/useRefreshDonorProfile';
 import { colors, spacing, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
 
 export function WalletScreen() {
+  useRefreshDonorProfile();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { sessao } = useDonorSession();
+  const pontos = sessao?.doador.pontosDoacao ?? 0;
+  const nivel = pontos >= 750 ? 'ouro' : pontos >= 300 ? 'prata' : 'bronze';
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -21,10 +26,10 @@ export function WalletScreen() {
         <View style={styles.pointsCard}>
           <View>
             <Text style={styles.pointsLabel}>Saldo de Pontos</Text>
-            <Text style={styles.points}>{userMock.points}</Text>
+            <Text style={styles.points}>{pontos}</Text>
             <View style={styles.levelRow}>
               <Ionicons color={colors.white} name="trophy" size={20} />
-              <Text style={styles.level}>Nivel: {userMock.level}</Text>
+              <Text style={styles.level}>Nível: {nivel}</Text>
             </View>
           </View>
           <Ionicons color={colors.white} name="trophy" size={122} style={styles.trophy} />
@@ -36,7 +41,7 @@ export function WalletScreen() {
             <Text style={styles.countText}>Meus Vouchers Ativos</Text>
           </View>
           <View style={styles.countPill}>
-            <Text style={styles.countNumber}>{userMock.activeVouchers}</Text>
+            <Text style={styles.countNumber}>{vouchersMock.length}</Text>
           </View>
         </View>
 
