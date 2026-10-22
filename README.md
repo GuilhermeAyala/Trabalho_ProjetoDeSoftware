@@ -178,3 +178,10 @@ O outro dispositivo poderá acessar `http://192.168.1.50:8081`. Se necessário, 
 
 - Protótipo no Figma: https://www.figma.com/proto/NkLFRu8mj07xEIGy3b4ddk/VITTA?node-id=1-2&t=f3YzHBQHA5YRVyxG-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=1%3A2
 - Deploy: https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg
+
+
+## ligar, desligar, primeira vez usando e etc 
+quando alterar o codigo ou ligar pela primeira vez: docker compose up --build -d
+ligar: docker compose start
+desligar:docker compose stop
+verificar status: docker compose ps
