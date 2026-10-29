@@ -6,7 +6,8 @@ export type Hemocentro = {
   longitude: number;
 };
 
-export type SessaoHemocentro = { hemocentro: Hemocentro; token: string };
+export type SessaoHemocentro = { hemocentro: Hemocentro; token: string; message?: string };
+export type RespostaAcessoHemocentro = { hemocentro: Hemocentro & { status: string }; token?: string; message?: string };
 
 export type EstoqueHemocentro = {
   id: number;
@@ -28,7 +29,7 @@ export type AgendamentoHemocentro = {
   id: number;
   data: string;
   horario: string;
-  status: 'AGENDADO' | 'CONFIRMADO' | 'REALIZADO' | 'CANCELADO';
+  status: 'AGENDADO' | 'CONFIRMADO' | 'REALIZADO' | 'CANCELADO' | 'NAO_COMPARECEU';
   doador: { id: number; nome: string; email: string; tipoSanguineo: string };
 };
 

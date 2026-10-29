@@ -4,6 +4,7 @@ import { doadorRoutes } from "./routes/DoadorRoutes";
 import { agendamentoRoutes } from "./routes/AgendamentoRoutes";
 import { hemocentroRoutes } from "./routes/HemocentroRoutes";
 import { triagemRoutes } from "./routes/TriagemRoutes";
+import { administradorRoutes } from "./routes/AdministradorRoutes";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/doadores", doadorRoutes);
 app.use("/doador/doadores", doadorRoutes);
 app.use("/agendamentos", agendamentoRoutes);
 app.use("/hemocentros", hemocentroRoutes);
+app.use("/admin", administradorRoutes);
 app.use("/triagens", triagemRoutes);
 
 app.get("/", (_req, res) => {

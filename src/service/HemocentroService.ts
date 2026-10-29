@@ -124,9 +124,10 @@ export class HemocentroService {
 
         const transicoesPermitidas: Record<string, readonly StatusAgendamento[]> = {
             AGENDADO: ["CONFIRMADO", "CANCELADO"],
-            CONFIRMADO: ["REALIZADO", "CANCELADO"],
+            CONFIRMADO: ["REALIZADO", "CANCELADO", "NAO_COMPARECEU"],
             REALIZADO: [],
             CANCELADO: [],
+            NAO_COMPARECEU: [],
         };
 
         const destinos = transicoesPermitidas[statusAtual] ?? [];

@@ -21,12 +21,12 @@ function segredo() {
     return valor;
 }
 
-function hashSenha(senha: string) {
+export function hashSenha(senha: string) {
     const salt = randomBytes(16).toString("hex");
     return `${salt}:${scryptSync(senha, salt, 64).toString("hex")}`;
 }
 
-function senhaConfere(senha: string, hash: string) {
+export function senhaConfere(senha: string, hash: string) {
     const [salt, esperadoHex] = hash.split(":");
     if (!salt || !esperadoHex) return false;
     const esperado = Buffer.from(esperadoHex, "hex");
@@ -72,14 +72,11 @@ export class HemocentroAuthService {
             || dados.latitude < -90 || dados.latitude > 90) throw new Error("Latitude inválida");
         if (typeof dados.longitude !== "number" || !Number.isFinite(dados.longitude)
             || dados.longitude < -180 || dados.longitude > 180) throw new Error("Longitude inválida");
-        // Verifica a configuração antes de persistir: sem chave não pode existir
-        // cadastro concluído que não consiga emitir a sessão correspondente.
-        segredo();
 
         try {
             const hemocentro = await prisma.hemocentro.create({
                 data: {
-                    nome, endereco, latitude: dados.latitude, longitude: dados.longitude,
+                    nome, endereco, latitude: dados.latitude, longitude: dados.longitude, status: "PENDENTE",
                     conta: { create: { email, senhaHash: hashSenha(dados.senha) } },
                     estoque: {
                         create: TIPOS_SANGUINEOS.map((tipoSanguineo) => ({
@@ -87,9 +84,9 @@ export class HemocentroAuthService {
                         })),
                     },
                 },
-                select: { id: true, nome: true, endereco: true, latitude: true, longitude: true },
+                select: { id: true, nome: true, endereco: true, latitude: true, longitude: true, status: true },
             });
-            return { hemocentro, token: emitirToken(hemocentro.id) };
+            return { hemocentro, message: "Solicitação enviada. Aguarde a análise do administrador." };
         } catch (error) {
             if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
                 throw new Error("E-mail já cadastrado para um hemocentro");
@@ -104,9 +101,16 @@ export class HemocentroAuthService {
         }
         const conta = await prisma.hemocentroConta.findUnique({
             where: { email: emailInformado.trim().toLowerCase() },
-            include: { hemocentro: { select: { id: true, nome: true, endereco: true, latitude: true, longitude: true } } },
+            include: { hemocentro: { select: { id: true, nome: true, endereco: true, latitude: true, longitude: true, status: true } } },
         });
         if (!conta || !senhaConfere(senha, conta.senhaHash)) throw new Error("E-mail ou senha inválidos");
-        return { hemocentro: conta.hemocentro, token: emitirToken(conta.hemocentroId) };
+        if (conta.hemocentro.status !== "APROVADO") {
+            return { hemocentro: conta.hemocentro, message: conta.hemocentro.status === "PENDENTE"
+                ? "Sua solicitação ainda está em análise."
+                : conta.hemocentro.status === "RECUSADO"
+                    ? "Sua solicitação de cadastro foi recusada."
+                    : "O acesso deste hemocentro está desativado." };
+        }
+        return { hemocentro: conta.hemocentro, token: emitirToken(conta.hemocentroId), message: "Seu cadastro foi aprovado. Bem-vindo ao VITTA!" };
     }
 }

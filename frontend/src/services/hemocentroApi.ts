@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import type { AgendamentoHemocentro, EstoqueHemocentro, MovimentacaoEstoque, SessaoHemocentro, VagaHemocentro } from '@/types/hemocentro';
+import type { AgendamentoHemocentro, EstoqueHemocentro, MovimentacaoEstoque, RespostaAcessoHemocentro, VagaHemocentro } from '@/types/hemocentro';
 
 type CadastroHemocentro = {
   nome: string;
@@ -13,12 +13,12 @@ type CadastroHemocentro = {
 function auth(token: string) { return { headers: { Authorization: `Bearer ${token}` } }; }
 
 export async function cadastrarHemocentro(dados: CadastroHemocentro) {
-  const response = await api.post<SessaoHemocentro>('/hemocentros/cadastro', dados);
+  const response = await api.post<RespostaAcessoHemocentro>('/hemocentros/cadastro', dados);
   return response.data;
 }
 
 export async function entrarHemocentro(email: string, senha: string) {
-  const response = await api.post<SessaoHemocentro>('/hemocentros/login', { email, senha });
+  const response = await api.post<RespostaAcessoHemocentro>('/hemocentros/login', { email, senha });
   return response.data;
 }
 

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { BloodCentersScreen } from '@/screens/BloodCentersScreen';
+import { AdminLoginScreen, AdminPanelScreen } from '@/screens/AdminScreens';
 import { DonationHistoryScreen } from '@/screens/DonationHistoryScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { AccessChoiceScreen, HemocentroAgendaScreen, HemocentroEstoqueScreen, HemocentroLoginScreen, HemocentroPerfilScreen, HemocentroSignUpScreen, HemocentroVagasScreen } from '@/screens/HemocentroScreens';
@@ -96,6 +97,8 @@ export function RootNavigator() {
         <Stack.Screen component={HemocentroSignUpScreen} name="HemocentroSignUp" />
         <Stack.Screen component={HemocentroLoginScreen} name="HemocentroLogin" />
         <Stack.Screen component={HemocentroTabs} name="HemocentroTabs" />
+        <Stack.Screen component={AdminLoginScreen} name="AdminLogin" />
+        <Stack.Screen component={AdminPanelScreen} name="AdminPanel" />
         <Stack.Screen component={AppTabs} name="AppTabs" />
         <Stack.Screen component={DonationHistoryScreen} name="DonationHistory" />
         <Stack.Screen component={InformationCenterScreen} name="InformationCenter" />

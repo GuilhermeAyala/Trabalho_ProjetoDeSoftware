@@ -1,4 +1,16 @@
 import { prisma } from "../src/config/prisma";
+import { hashSenha } from "../src/service/HemocentroAuthService";
+
+// Credenciais iniciais para o ambiente de demonstração. Troque ADMIN_SEED_PASSWORD
+// antes de executar o seed em qualquer ambiente compartilhado.
+const ADMIN_EMAIL = "admin@vitta.local";
+const ADMIN_SEED_PASSWORD = process.env.ADMIN_SEED_PASSWORD ?? "VittaAdmin@2026";
+
+async function criarAdministrador() {
+    const existente = await prisma.administrador.findUnique({ where: { email: ADMIN_EMAIL }, select: { id: true } });
+    if (!existente) await prisma.administrador.create({ data: { email: ADMIN_EMAIL, senhaHash: hashSenha(ADMIN_SEED_PASSWORD) } });
+    console.log(`Administrador disponível: ${ADMIN_EMAIL}`);
+}
 
 // O frontend usa o doador 1 enquanto não existe autenticação. Este registro
 // fictício torna o Compose demonstrável logo após o primeiro `up`.
@@ -70,6 +82,7 @@ async function criarHemocentrosDemonstracao() {
 }
 
 Promise.all([
+    criarAdministrador(),
     criarDoadorDemonstracao(),
     criarHemocentrosDemonstracao(),
 ])

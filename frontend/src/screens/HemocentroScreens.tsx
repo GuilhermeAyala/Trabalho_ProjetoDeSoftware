@@ -43,13 +43,13 @@ export function AccessChoiceScreen({ navigation }: ChoiceProps) {
           <PrimaryButton label="CADASTRAR HEMOCENTRO" onPress={() => navigation.navigate('HemocentroSignUp')} variant="secondary" />
           <Pressable onPress={() => navigation.navigate('HemocentroLogin')}><Text style={styles.link}>Já tenho cadastro de hemocentro</Text></Pressable>
         </View>
+        <Pressable onPress={() => navigation.navigate('AdminLogin')}><Text style={styles.link}>Acesso do administrador</Text></Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 export function HemocentroSignUpScreen({ navigation }: CadastroProps) {
-  const { definirSessao } = useHemocentroSession();
   const [nome, setNome] = useState('');
   const [endereco, setEndereco] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -58,6 +58,7 @@ export function HemocentroSignUpScreen({ navigation }: CadastroProps) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState('');
 
   async function cadastrar() {
     const lat = Number(latitude.replace(',', '.'));
@@ -67,11 +68,14 @@ export function HemocentroSignUpScreen({ navigation }: CadastroProps) {
       setErro('Preencha todos os campos e informe coordenadas válidas.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErro('Informe um e-mail completo, por exemplo: contato@hemocentro.org.');
+      return;
+    }
     setErro(''); setSalvando(true);
     try {
-      const sessao = await cadastrarHemocentro({ nome, endereco, latitude: lat, longitude: lon, email, senha });
-      definirSessao(sessao);
-      navigation.replace('HemocentroTabs');
+      const resposta = await cadastrarHemocentro({ nome, endereco, latitude: lat, longitude: lon, email, senha });
+      setMensagem(resposta.message ?? 'Solicitação enviada. Aguarde a análise do administrador.');
     } catch (error) { setErro(getApiErrorMessage(error, 'Não foi possível cadastrar o hemocentro.')); }
     finally { setSalvando(false); }
   }
@@ -94,9 +98,11 @@ export function HemocentroSignUpScreen({ navigation }: CadastroProps) {
               <View style={styles.flex}><TextField label="LONGITUDE" value={longitude} onChangeText={setLongitude} keyboardType="decimal-pad" placeholder="-47.92972" /></View>
             </View>
             <TextField label="E-MAIL DE ACESSO" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="contato@hemocentro.org" />
+            <Text style={styles.hint}>Use um e-mail com domínio, como contato@hemocentro.org.</Text>
             <TextField label="SENHA" value={senha} onChangeText={setSenha} secureTextEntry placeholder="Mínimo de 8 caracteres" />
           </View>
           {erro ? <Text style={styles.error}>{erro}</Text> : null}
+          {mensagem ? <Text style={styles.success}>{mensagem}</Text> : null}
           <PrimaryButton label={salvando ? 'CADASTRANDO...' : 'CADASTRAR HEMOCENTRO'} disabled={salvando} onPress={() => void cadastrar()} />
           <Pressable onPress={() => navigation.navigate('HemocentroLogin')}><Text style={styles.link}>Já tenho cadastro</Text></Pressable>
           <Pressable onPress={() => navigation.navigate('AccessChoice')}><Text style={styles.link}>Voltar à escolha de acesso</Text></Pressable>
@@ -112,12 +118,14 @@ export function HemocentroLoginScreen({ navigation }: LoginProps) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [mensagem, setMensagem] = useState('');
 
   async function entrar() {
-    setErro(''); setCarregando(true);
+    setErro(''); setMensagem(''); setCarregando(true);
     try {
       const sessao = await entrarHemocentro(email, senha);
-      definirSessao(sessao);
+      if (!sessao.token) { setMensagem(sessao.message ?? 'Cadastro em análise.'); return; }
+      definirSessao({ hemocentro: sessao.hemocentro, token: sessao.token, message: sessao.message });
       navigation.replace('HemocentroTabs');
     } catch (error) { setErro(getApiErrorMessage(error, 'Não foi possível entrar.')); }
     finally { setCarregando(false); }
@@ -131,6 +139,7 @@ export function HemocentroLoginScreen({ navigation }: LoginProps) {
         <TextField label="E-MAIL" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
         <TextField label="SENHA" value={senha} onChangeText={setSenha} secureTextEntry />
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
+        {mensagem ? <Text style={styles.hint}>{mensagem}</Text> : null}
         <PrimaryButton label={carregando ? 'ENTRANDO...' : 'ENTRAR'} disabled={carregando} onPress={() => void entrar()} />
         <Pressable onPress={() => navigation.navigate('HemocentroSignUp')}><Text style={styles.link}>Cadastrar hemocentro</Text></Pressable>
         <Pressable onPress={() => navigation.navigate('AccessChoice')}><Text style={styles.link}>Voltar à escolha de acesso</Text></Pressable>
@@ -167,6 +176,7 @@ export function HemocentroAgendaScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>Agenda do hemocentro</Text>
+        {sessao?.message ? <Text style={styles.success}>{sessao.message}</Text> : null}
         <Text style={styles.muted}>{sessao?.hemocentro.nome}</Text>
         <PrimaryButton label="ATUALIZAR AGENDA" variant="light" onPress={() => void carregar()} />
         {carregando ? <Text style={styles.muted}>Carregando agendamentos...</Text> : null}

@@ -5,6 +5,7 @@ export class HemocentroRepository {
     // ao service, pois é uma regra do caso de uso e não do banco.
     async listar() {
         return prisma.hemocentro.findMany({
+            where: { status: "APROVADO" },
             select: {
                 id: true,
                 nome: true,
@@ -18,7 +19,7 @@ export class HemocentroRepository {
 
     async buscarPorId(id: number) {
         return prisma.hemocentro.findUnique({
-            where: { id },
+            where: { id, status: "APROVADO" },
             select: {
                 id: true,
                 nome: true,

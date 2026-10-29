@@ -17,6 +17,8 @@ export type RootStackParamList = {
   HemocentroSignUp: undefined;
   HemocentroLogin: undefined;
   HemocentroTabs: undefined;
+  AdminLogin: undefined;
+  AdminPanel: { token: string };
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
   DonationHistory: undefined;
   InformationCenter: undefined;

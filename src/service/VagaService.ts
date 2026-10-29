@@ -13,7 +13,7 @@ export class VagaService {
     listar(hemocentroId: number, apenasDisponiveis = false) {
         if (!Number.isInteger(hemocentroId) || hemocentroId <= 0) throw new Error("Id do hemocentro inválido");
         return prisma.vaga.findMany({
-            where: { hemocentroId, data: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") } },
+            where: { hemocentroId, hemocentro: { status: "APROVADO" }, data: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") } },
             orderBy: [{ data: "asc" }, { horario: "asc" }],
             select: { id: true, hemocentroId: true, data: true, horario: true, capacidade: true, reservadas: true },
         }).then((vagas) => apenasDisponiveis

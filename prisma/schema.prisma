@@ -32,11 +32,19 @@ model Hemocentro {
   endereco  String
   latitude  Float
   longitude Float
+  status    String @default("APROVADO")
+  decididoEm DateTime?
 
   agendamento Agendamento[] //agendamento tambem ligado ao Hemocentro
   estoque     Estoque[] //estoque ligado ao hemocentro
   conta       HemocentroConta?
   vagas       Vaga[]
+}
+
+model Administrador {
+  id Int @id @default(autoincrement())
+  email String @unique
+  senhaHash String
 }
 
 model HemocentroConta {

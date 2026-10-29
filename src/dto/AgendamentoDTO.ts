@@ -30,6 +30,7 @@ export const STATUS_AGENDAMENTO = [
     "CONFIRMADO",
     "REALIZADO",
     "CANCELADO",
+    "NAO_COMPARECEU",
 ] as const;
 
 export type StatusAgendamento = typeof STATUS_AGENDAMENTO[number];

@@ -11,6 +11,12 @@ docker version
 docker compose version
 ```
 
+## Acesso do administrador
+
+Na tela inicial, escolha **Acesso do administrador**. O seed cria `admin@vitta.local` com a senha inicial `VittaAdmin@2026`, definida em `prisma/seed.ts`. Configure `ADMIN_SEED_PASSWORD` em `.env.docker` antes da primeira execução para substituí-la. O seed não altera a senha de um administrador já existente.
+
+O cadastro de hemocentro envia uma solicitação pendente. O administrador aceita ou recusa no primeiro item do menu horizontal. O hemocentro consulta a decisão ao tentar entrar: a aprovação libera o portal; a recusa é mostrada na tela. Os demais itens do menu permitem editar/excluir hemocentros, movimentar estoque, abrir horários, alterar capacidade e registrar comparecimento ou ausência. A exclusão é lógica: remove o hemocentro da busca pública e bloqueia seu acesso, preservando o histórico de doações; o administrador pode reativá-lo.
+
 ## Comandos do Docker para o time
 
 Execute os comandos abaixo na pasta raiz do projeto.
