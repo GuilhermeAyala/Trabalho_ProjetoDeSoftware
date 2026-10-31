@@ -1,5 +1,10 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { prisma } from "../config/prisma";
+import {
+    criptografarCpf,
+    normalizarCpf,
+    prefixoBuscaCpf,
+} from "../security/CpfEncryption";
 
 const validadeTokenMs = 12 * 60 * 60 * 1000;
 const camposPublicos = { id: true, nome: true, email: true, sexo: true, tipoSanguineo: true, pontosDoacao: true } as const;
@@ -67,7 +72,7 @@ export class DoadorAuthService {
         const nome = typeof dados.nome === "string" ? dados.nome.trim() : "";
         const email = typeof dados.email === "string" ? dados.email.trim().toLowerCase() : "";
         const senha = typeof dados.password === "string" ? dados.password : "";
-        const cpf = typeof dados.cpf === "string" ? dados.cpf.replace(/\D/g, "") : "";
+        const cpf = typeof dados.cpf === "string" ? normalizarCpf(dados.cpf) : "";
         const sexo = dados.sexo;
         const tipoSanguineo = dados.tipoSanguineo;
         const nascimento = typeof dados.DataNascimento === "string" ? new Date(dados.DataNascimento) : new Date(NaN);
@@ -80,9 +85,19 @@ export class DoadorAuthService {
         if (!["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].includes(String(tipoSanguineo))) throw new Error("Selecione um tipo sanguíneo válido");
         segredo();
         if (await prisma.doador.findFirst({ where: { email } })) throw new Error("E-mail já cadastrado");
-        if (await prisma.doador.findFirst({ where: { cpf } })) throw new Error("CPF já cadastrado");
+        const prefixoCpf = prefixoBuscaCpf(cpf);
+        if (await prisma.doador.findFirst({
+            where: {
+                OR: [
+                    { cpf: { startsWith: prefixoCpf } },
+                    // Compatibilidade temporária com registros anteriores à criptografia.
+                    { cpf },
+                ],
+            },
+            select: { id: true },
+        })) throw new Error("CPF já cadastrado");
         const doador = await prisma.doador.create({
-            data: { nome, email, password: hashSenha(senha), cpf, sexo: String(sexo), tipoSanguineo: String(tipoSanguineo), DataNascimento: nascimento },
+            data: { nome, email, password: hashSenha(senha), cpf: criptografarCpf(cpf), sexo: String(sexo), tipoSanguineo: String(tipoSanguineo), DataNascimento: nascimento },
             select: camposPublicos,
         });
         return { doador: { ...doador, doacoesRealizadas: 0 }, token: emitirToken(doador.id) };

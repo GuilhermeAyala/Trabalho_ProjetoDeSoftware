@@ -5,6 +5,7 @@ import { agendamentoRoutes } from "./routes/AgendamentoRoutes";
 import { hemocentroRoutes } from "./routes/HemocentroRoutes";
 import { triagemRoutes } from "./routes/TriagemRoutes";
 import { administradorRoutes } from "./routes/AdministradorRoutes";
+import { migrarCpfsLegados } from "./service/CpfMigrationService";
 
 dotenv.config();
 
@@ -40,6 +41,18 @@ app.get("/", (_req, res) => {
   res.send("API rodando");
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+async function iniciarServidor() {
+  const cpfsMigrados = await migrarCpfsLegados();
+  if (cpfsMigrados > 0) {
+    console.log(`${cpfsMigrados} CPF(s) legado(s) foram criptografados.`);
+  }
+
+  app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
+  });
+}
+
+void iniciarServidor().catch((error: unknown) => {
+  console.error("Não foi possível iniciar a API.", error);
+  process.exitCode = 1;
 });

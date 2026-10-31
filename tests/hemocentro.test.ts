@@ -4,6 +4,7 @@ import { test } from 'node:test';
 
 process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5433/test';
 process.env.HEMOCENTRO_AUTH_SECRET = 'segredo_de_teste_para_hemocentro_2026_123456';
+process.env.CPF_ENCRYPTION_KEY = 'segredo_de_teste_para_criptografia_cpf_2026';
 
 type EstoqueRepository = import('../src/repository/EstoqueRepository').EstoqueRepository;
 
@@ -41,4 +42,27 @@ test('estoque exige tipo, quantidade e motivo antes de escrever', async () => {
   const resultado = await service.movimentar(3, { tipoSanguineo: 'O+', tipo: 'BAIXA', quantidade: 2, motivo: ' uso clínico ' });
   assert.deepEqual(resultado, { hemocentroId: 3, dados: { tipoSanguineo: 'O+', tipo: 'BAIXA', quantidade: 2, motivo: 'uso clínico' } });
   assert.equal(chamadas, 1);
+});
+
+test('CPF é criptografado com valor aleatório e pode ser recuperado somente com a chave', async () => {
+  const {
+    cpfEstaCriptografado,
+    criptografarCpf,
+    descriptografarCpf,
+    prefixoBuscaCpf,
+  } = await import('../src/security/CpfEncryption');
+  const cpf = '123.456.789-01';
+  const primeiro = criptografarCpf(cpf);
+  const segundo = criptografarCpf(cpf);
+
+  assert.equal(cpfEstaCriptografado(primeiro), true);
+  assert.notEqual(primeiro, segundo);
+  assert.equal(primeiro.includes('12345678901'), false);
+  assert.equal(descriptografarCpf(primeiro), '12345678901');
+  assert.equal(prefixoBuscaCpf(cpf), prefixoBuscaCpf('12345678901'));
+
+  const chaveCorreta = process.env.CPF_ENCRYPTION_KEY;
+  process.env.CPF_ENCRYPTION_KEY = 'outra_chave_de_teste_com_mais_de_32_caracteres';
+  assert.throws(() => descriptografarCpf(primeiro));
+  process.env.CPF_ENCRYPTION_KEY = chaveCorreta;
 });

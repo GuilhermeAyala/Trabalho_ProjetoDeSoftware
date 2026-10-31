@@ -1,5 +1,6 @@
 import type { DadosCriacaoDoador, DoadorDTO } from "../dto/DoadorDTO";
 import { prisma } from "../config/prisma";
+import { criptografarCpf } from "../security/CpfEncryption";
 
 export class DoadorRepository{
     /**
@@ -24,7 +25,7 @@ export class DoadorRepository{
                 email: novoDoador.email,
                 DataNascimento: novoDoador.DataNascimento,
                 password: novoDoador.password,
-                cpf: novoDoador.cpf,
+                cpf: criptografarCpf(novoDoador.cpf),
                 sexo: novoDoador.sexo,
                 tipoSanguineo: novoDoador.tipoSanguineo,
             },

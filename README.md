@@ -17,6 +17,10 @@ Na tela inicial, escolha **Acesso do administrador**. O seed cria `admin@vitta.l
 
 O cadastro de hemocentro envia uma solicitação pendente. O administrador aceita ou recusa no primeiro item do menu horizontal. O hemocentro consulta a decisão ao tentar entrar: a aprovação libera o portal; a recusa é mostrada na tela. Os demais itens do menu permitem editar/excluir hemocentros, movimentar estoque, abrir horários, alterar capacidade e registrar comparecimento ou ausência. A exclusão é lógica: remove o hemocentro da busca pública e bloqueia seu acesso, preservando o histórico de doações; o administrador pode reativá-lo.
 
+Os CPFs dos doadores são armazenados com criptografia autenticada AES-256-GCM. Configure `CPF_ENCRYPTION_KEY` com pelo menos 32 caracteres e mantenha o mesmo valor enquanto existirem dados no banco; trocar ou perder a chave impede a recuperação dos CPFs já criptografados.
+
+Na área do doador, a tela de hemocentros apresenta um mapa OpenStreetMap com marcadores criados a partir da latitude e longitude de cada instituição aprovada. O carregamento dos blocos do mapa requer acesso à internet.
+
 ## Comandos do Docker para o time
 
 Execute os comandos abaixo na pasta raiz do projeto.

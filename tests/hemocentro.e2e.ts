@@ -39,6 +39,28 @@ async function main() {
         const adminLogin = await request("/admin/login", { method: "POST", body: JSON.stringify({ email: adminEmail, senha: "senha-admin-e2e" }) });
         await request("/admin/solicitacoes", {}, 401);
 
+        const doadorLegado = await prisma.doador.create({
+            data: {
+                nome: "Doador legado E2E",
+                email: `e2e-legado-${sufixo}@vitta.local`,
+                DataNascimento: new Date("1990-01-01T00:00:00.000Z"),
+                password: "senha-legada",
+                cpf: "88888888888",
+                sexo: "Não identificar",
+                tipoSanguineo: "O-",
+            },
+            select: { id: true },
+        });
+        idsDoador.push(doadorLegado.id);
+        const { migrarCpfsLegados } = await import("../src/service/CpfMigrationService");
+        assert.equal(await migrarCpfsLegados(), 1);
+        const legadoProtegido = await prisma.doador.findUniqueOrThrow({
+            where: { id: doadorLegado.id },
+            select: { cpf: true },
+        });
+        assert.match(legadoProtegido.cpf, /^v1:/);
+        assert.equal(legadoProtegido.cpf.includes("88888888888"), false);
+
         const cadastrarHemocentro = async (indice: number) => {
             const resultado = await request("/hemocentros/cadastro", {
                 method: "POST",
@@ -139,12 +161,30 @@ async function main() {
                     tipoSanguineo: "O+",
                 }),
             }, 201);
+            const persistido = await prisma.doador.findUniqueOrThrow({
+                where: { id: resultado.doador.id },
+                select: { cpf: true },
+            });
+            assert.match(persistido.cpf, /^v1:/);
+            assert.equal(persistido.cpf.includes(`9999999990${indice}`), false);
             idsDoador.push(resultado.doador.id);
             tokensDoador.push(resultado.token);
             return resultado.doador;
         };
 
         const doador1 = await cadastrarDoador(0);
+        await request("/doadores/cadastro", {
+            method: "POST",
+            body: JSON.stringify({
+                nome: "Doador CPF duplicado",
+                email: `e2e-cpf-duplicado-${sufixo}@vitta.local`,
+                DataNascimento: "1995-01-01T00:00:00.000Z",
+                password: "senha-e2e",
+                cpf: "999.999.999-00",
+                sexo: "Masculino",
+                tipoSanguineo: "O+",
+            }),
+        }, 400);
         const doador2 = await cadastrarDoador(1);
         const respostasAptas = {
             estaEmBoasCondicoesDeSaude: true,

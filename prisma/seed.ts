@@ -1,5 +1,6 @@
 import { prisma } from "../src/config/prisma";
 import { hashSenha } from "../src/service/HemocentroAuthService";
+import { criptografarCpf } from "../src/security/CpfEncryption";
 
 // Credenciais iniciais para o ambiente de demonstração. Troque ADMIN_SEED_PASSWORD
 // antes de executar o seed em qualquer ambiente compartilhado.
@@ -49,7 +50,7 @@ async function criarDoadorDemonstracao() {
             DataNascimento: new Date("1995-01-01T00:00:00.000Z"),
             // Dados exclusivamente fictícios para o banco Docker local.
             password: "senha-demonstracao",
-            cpf: "00000000000",
+            cpf: criptografarCpf("00000000000"),
             sexo: "Não identificar",
             tipoSanguineo: "O+",
         },

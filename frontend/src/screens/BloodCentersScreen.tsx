@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BloodCenterCard } from '@/components/BloodCenterCard';
+import { DonationMap } from '@/components/DonationMap';
 import { SectionTitle } from '@/components/SectionTitle';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { getApiErrorMessage } from '@/services/api';
@@ -34,20 +35,32 @@ export function BloodCentersScreen() {
           <Text style={styles.subtitle}>Encontre locais cadastrados e escolha onde doar.</Text>
         </View>
 
-        <SectionTitle>Hemocentros cadastrados</SectionTitle>
         {carregando ? <Text style={styles.subtitle}>Carregando hemocentros...</Text> : null}
         {erro ? <Text style={styles.subtitle}>{erro}</Text> : null}
         {erro ? <PrimaryButton label="TENTAR NOVAMENTE" onPress={() => void carregar()} /> : null}
         {!carregando && !erro && hemocentros.length === 0 ? <Text style={styles.subtitle}>Nenhum hemocentro cadastrado.</Text> : null}
-        <View style={styles.list}>
-          {hemocentros.map((hemocentro) => (
-            <BloodCenterCard
-              bloodCenter={{ id: String(hemocentro.id), name: hemocentro.nome, address: hemocentro.endereco, distance: hemocentro.distanciaKm === undefined ? 'Local cadastrado' : `${hemocentro.distanciaKm} km`, nextSlot: 'Escolha data e hora' }}
-              key={hemocentro.id}
-              onSchedule={() => navigation.navigate('AppTabs', { screen: 'Schedule', params: { hemocentroId: hemocentro.id } })}
-            />
-          ))}
-        </View>
+        {!carregando && !erro && hemocentros.length > 0 ? (
+          <>
+            <SectionTitle>Mapa das instituições</SectionTitle>
+            <Text style={styles.mapHint}>Toque em um marcador para ver o nome e o endereço do local de doação.</Text>
+            <DonationMap hemocentros={hemocentros} />
+          </>
+        ) : null}
+
+        {hemocentros.length > 0 ? (
+          <>
+            <SectionTitle>Lista de hemocentros</SectionTitle>
+            <View style={styles.list}>
+              {hemocentros.map((hemocentro) => (
+                <BloodCenterCard
+                  bloodCenter={{ id: String(hemocentro.id), name: hemocentro.nome, address: hemocentro.endereco, distance: hemocentro.distanciaKm === undefined ? 'Local cadastrado' : `${hemocentro.distanciaKm} km`, nextSlot: 'Escolha data e hora' }}
+                  key={hemocentro.id}
+                  onSchedule={() => navigation.navigate('AppTabs', { screen: 'Schedule', params: { hemocentroId: hemocentro.id } })}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -61,6 +74,12 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
+  },
+  mapHint: {
+    color: colors.text.muted,
+    fontSize: typography.size.sm,
+    lineHeight: 19,
+    marginTop: -spacing.lg,
   },
   safeArea: {
     backgroundColor: colors.background,
