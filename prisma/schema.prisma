@@ -27,12 +27,12 @@ model Doador {
 }
 
 model Hemocentro {
-  id        Int    @id @default(autoincrement())
-  nome      String
-  endereco  String
-  latitude  Float
-  longitude Float
-  status    String @default("APROVADO")
+  id         Int       @id @default(autoincrement())
+  nome       String
+  endereco   String
+  latitude   Float
+  longitude  Float
+  status     String    @default("APROVADO")
   decididoEm DateTime?
 
   agendamento Agendamento[] //agendamento tambem ligado ao Hemocentro
@@ -42,8 +42,8 @@ model Hemocentro {
 }
 
 model Administrador {
-  id Int @id @default(autoincrement())
-  email String @unique
+  id        Int    @id @default(autoincrement())
+  email     String @unique
   senhaHash String
 }
 
@@ -62,14 +62,15 @@ model Agendamento {
   id           Int        @id @default(autoincrement())
   data         DateTime
   horario      String
-  status       String     @default("AGENDADO")
+  status       String     @default("AGUARDANDO_TRIAGEM")
   criadoEm     DateTime   @default(now())
   doadorId     Int
   doador       Doador     @relation(fields: [doadorId], references: [id])
   hemocentroId Int
   hemocentro   Hemocentro @relation(fields: [hemocentroId], references: [id])
   vagaId       Int?
-  vaga         Vaga?       @relation(fields: [vagaId], references: [id])
+  vaga         Vaga?      @relation(fields: [vagaId], references: [id])
+  triagens     Triagem[]
 
   // vagaId é opcional para preservar agendamentos criados antes da introdução
   // das vagas. Novos agendamentos exigem uma vaga aberta.
@@ -91,9 +92,11 @@ model Vaga {
 // A triagem do app é preliminar. Ela orienta o doador, mas não substitui
 // a avaliação clínica presencial realizada pelo hemocentro.
 model Triagem {
-  id                              Int      @id @default(autoincrement())
+  id                              Int          @id @default(autoincrement())
   doadorId                        Int
-  doador                          Doador   @relation(fields: [doadorId], references: [id])
+  doador                          Doador       @relation(fields: [doadorId], references: [id])
+  agendamentoId                   Int?
+  agendamento                     Agendamento? @relation(fields: [agendamentoId], references: [id])
   estaEmBoasCondicoesDeSaude      Boolean
   pesaNoMinimo50Kg                Boolean
   dormiuPeloMenosSeisHoras        Boolean
@@ -103,16 +106,16 @@ model Triagem {
   fezProcedimentoDeRiscoRecente   Boolean
   apto                            Boolean
   motivosInaptidao                String[]
-  realizadaEm                     DateTime @default(now())
+  realizadaEm                     DateTime     @default(now())
 }
 
 model Estoque {
-  id            Int        @id @default(autoincrement())
+  id            Int                   @id @default(autoincrement())
   tipoSanguineo String
   nivel         String
-  quantidade    Int        @default(0)
+  quantidade    Int                   @default(0)
   hemocentroId  Int
-  hemocentro    Hemocentro @relation(fields: [hemocentroId], references: [id])
+  hemocentro    Hemocentro            @relation(fields: [hemocentroId], references: [id])
   movimentacoes MovimentacaoEstoque[]
 
   @@unique([hemocentroId, tipoSanguineo])

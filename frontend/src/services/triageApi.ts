@@ -3,6 +3,7 @@ import type { TriageAnswers, TriageResponse } from '@/types/triage';
 
 type RealizarTriagemInput = {
   doadorId: number;
+  agendamentoId?: number;
   respostas: TriageAnswers;
 };
 

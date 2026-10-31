@@ -40,7 +40,7 @@ export class AgendamentoRepository {
                 hemocentroId,
                 data,
                 horario,
-                status: { in: ["AGENDADO", "CONFIRMADO"] },
+                status: { in: ["AGUARDANDO_TRIAGEM", "AGENDADO", "CONFIRMADO"] },
             },
             select: { id: true },
         });
@@ -56,7 +56,7 @@ export class AgendamentoRepository {
             if (!vaga) throw new Error("O hemocentro não abriu vaga para este horário");
             if (vaga.reservadas >= vaga.capacidade) throw new Error("Não há vagas disponíveis neste horário");
             const duplicado = await tx.agendamento.findFirst({
-                where: { doadorId, hemocentroId, data, horario, status: { in: ["AGENDADO", "CONFIRMADO"] } },
+                where: { doadorId, hemocentroId, data, horario, status: { in: ["AGUARDANDO_TRIAGEM", "AGENDADO", "CONFIRMADO"] } },
                 select: { id: true },
             });
             if (duplicado) throw new Error("O doador já possui este agendamento");
@@ -66,7 +66,14 @@ export class AgendamentoRepository {
             });
             if (reserva.count !== 1) throw new Error("Vaga alterada simultaneamente. Tente novamente");
             return tx.agendamento.create({
-                data: { doadorId, hemocentroId, data, horario, vagaId: vaga.id },
+                data: {
+                    doadorId,
+                    hemocentroId,
+                    data,
+                    horario,
+                    vagaId: vaga.id,
+                    status: "AGUARDANDO_TRIAGEM",
+                },
                 select: {
                     id: true, data: true, horario: true, status: true, criadoEm: true, doadorId: true,
                     hemocentro: { select: { id: true, nome: true, endereco: true } },

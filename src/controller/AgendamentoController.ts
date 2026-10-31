@@ -11,7 +11,7 @@ export class AgendamentoController {
             const agendamento = await this.agendamentoService.agendarDoacao(dados);
 
             return res.status(201).json({
-                message: "Doação agendada com sucesso",
+                message: "Horário reservado. Conclua a triagem para confirmar o agendamento",
                 agendamento,
             });
         } catch (error) {

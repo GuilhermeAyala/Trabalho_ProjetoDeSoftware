@@ -9,12 +9,21 @@ export class TriagemController {
         try {
             const dados: RealizarTriagemDTO = req.body;
             const resultado = await this.triagemService.realizarTriagem(dados);
+            const vinculadaAoAgendamento = resultado.agendamentoId !== null;
 
             return res.status(201).json({
-                message: resultado.apto
-                    ? "Pré-triagem concluída: apto para continuar o fluxo"
-                    : "Pré-triagem concluída: procure o hemocentro para orientação",
-                aviso: "O resultado não substitui a triagem clínica presencial.",
+                message: vinculadaAoAgendamento
+                    ? resultado.apto
+                        ? "Pré-triagem concluída: agendamento confirmado"
+                        : "Pré-triagem concluída: agendamento cancelado"
+                    : resultado.apto
+                        ? "Pré-triagem concluída: apto para continuar o fluxo"
+                        : "Pré-triagem concluída: procure o hemocentro para orientação",
+                aviso: vinculadaAoAgendamento
+                    ? resultado.apto
+                        ? "Triagem concluída. Seu agendamento foi mantido."
+                        : "Sua triagem não foi aprovada. O agendamento foi cancelado e a vaga foi liberada."
+                    : "O resultado não substitui a triagem clínica presencial.",
                 resultado,
             });
         } catch (error) {

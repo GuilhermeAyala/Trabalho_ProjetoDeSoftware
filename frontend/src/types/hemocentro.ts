@@ -29,7 +29,7 @@ export type AgendamentoHemocentro = {
   id: number;
   data: string;
   horario: string;
-  status: 'AGENDADO' | 'CONFIRMADO' | 'REALIZADO' | 'CANCELADO' | 'NAO_COMPARECEU';
+  status: 'AGUARDANDO_TRIAGEM' | 'AGENDADO' | 'CONFIRMADO' | 'REALIZADO' | 'CANCELADO' | 'NAO_COMPARECEU';
   doador: { id: number; nome: string; email: string; tipoSanguineo: string };
 };
 

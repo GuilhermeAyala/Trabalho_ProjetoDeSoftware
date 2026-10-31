@@ -123,6 +123,7 @@ export class HemocentroService {
         }
 
         const transicoesPermitidas: Record<string, readonly StatusAgendamento[]> = {
+            AGUARDANDO_TRIAGEM: [],
             AGENDADO: ["CONFIRMADO", "CANCELADO"],
             CONFIRMADO: ["REALIZADO", "CANCELADO", "NAO_COMPARECEU"],
             REALIZADO: [],

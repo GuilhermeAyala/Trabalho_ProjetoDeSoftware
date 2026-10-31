@@ -146,15 +146,47 @@ async function main() {
 
         const doador1 = await cadastrarDoador(0);
         const doador2 = await cadastrarDoador(1);
+        const respostasAptas = {
+            estaEmBoasCondicoesDeSaude: true,
+            pesaNoMinimo50Kg: true,
+            dormiuPeloMenosSeisHoras: true,
+            estaAlimentado: true,
+            consumiuAlcoolNasUltimas12Horas: false,
+            possuiSintomasInfecciosos: false,
+            fezProcedimentoDeRiscoRecente: false,
+        };
         const agendamentoCriado = await request("/agendamentos", {
             method: "POST", headers: auth(tokensDoador[0]),
             body: JSON.stringify({ doadorId: doador1.id, hemocentroId: centroA.hemocentro.id, data, horario }),
         }, 201);
         const agendamentoId = agendamentoCriado.agendamento.id;
+        assert.equal(agendamentoCriado.agendamento.status, "AGUARDANDO_TRIAGEM");
+        await request(`/hemocentros/me/agendamentos/${agendamentoId}/status`, {
+            method: "PATCH", headers: auth(loginA.token), body: JSON.stringify({ status: "CONFIRMADO" }),
+        }, 400);
 
         await request("/agendamentos", {
             method: "POST", headers: auth(tokensDoador[1]),
             body: JSON.stringify({ doadorId: doador2.id, hemocentroId: centroA.hemocentro.id, data, horario }),
+        }, 400);
+
+        const triagemAprovada = await request("/triagens", {
+            method: "POST", headers: auth(tokensDoador[0]),
+            body: JSON.stringify({
+                doadorId: doador1.id,
+                agendamentoId,
+                respostas: respostasAptas,
+            }),
+        }, 201);
+        assert.equal(triagemAprovada.resultado.apto, true);
+        assert.equal(triagemAprovada.resultado.agendamentoCancelado, false);
+        await request("/triagens", {
+            method: "POST", headers: auth(tokensDoador[0]),
+            body: JSON.stringify({
+                doadorId: doador1.id,
+                agendamentoId,
+                respostas: respostasAptas,
+            }),
         }, 400);
 
         const agendaA = await request("/hemocentros/me/agendamentos", { headers: auth(loginA.token) });
@@ -180,6 +212,33 @@ async function main() {
             method: "PATCH", headers: auth(loginA.token), body: JSON.stringify({ status: "CANCELADO" }),
         }, 400);
 
+        await request("/hemocentros/me/vagas", {
+            method: "POST", headers: auth(loginA.token),
+            body: JSON.stringify({ data, horario: "15:30", capacidade: 1 }),
+        }, 201);
+        const agendamentoReprovado = await request("/agendamentos", {
+            method: "POST", headers: auth(tokensDoador[1]),
+            body: JSON.stringify({ doadorId: doador2.id, hemocentroId: centroA.hemocentro.id, data, horario: "15:30" }),
+        }, 201);
+        const triagemReprovada = await request("/triagens", {
+            method: "POST", headers: auth(tokensDoador[1]),
+            body: JSON.stringify({
+                doadorId: doador2.id,
+                agendamentoId: agendamentoReprovado.agendamento.id,
+                respostas: { ...respostasAptas, estaEmBoasCondicoesDeSaude: false },
+            }),
+        }, 201);
+        assert.equal(triagemReprovada.resultado.apto, false);
+        assert.equal(triagemReprovada.resultado.agendamentoCancelado, true);
+        assert.match(triagemReprovada.aviso, /cancelado.*vaga foi liberada/i);
+        const agendaDoador2 = await request(`/agendamentos/doador/${doador2.id}`, { headers: auth(tokensDoador[1]) });
+        assert.equal(
+            agendaDoador2.find((item: Json) => item.id === agendamentoReprovado.agendamento.id).status,
+            "CANCELADO",
+        );
+        const vagasAposReprovacao = await request(`/hemocentros/${centroA.hemocentro.id}/vagas`);
+        assert.equal(vagasAposReprovacao.find((item: Json) => item.horario === "15:30").reservadas, 0);
+
         const vagaAdmin = await request(`/admin/hemocentros/${centroB.hemocentro.id}/vagas`, {
             method: "POST", headers: auth(adminLogin.token),
             body: JSON.stringify({ data, horario: "14:30", capacidade: 1 }),
@@ -189,6 +248,14 @@ async function main() {
             method: "POST", headers: auth(tokensDoador[1]), body: JSON.stringify({ doadorId: doador2.id, hemocentroId: centroB.hemocentro.id, data, horario: "14:30" }),
         }, 201);
         const ausenteId = agendamentoAusente.agendamento.id;
+        await request("/triagens", {
+            method: "POST", headers: auth(tokensDoador[1]),
+            body: JSON.stringify({
+                doadorId: doador2.id,
+                agendamentoId: ausenteId,
+                respostas: respostasAptas,
+            }),
+        }, 201);
         for (const status of ["CONFIRMADO", "NAO_COMPARECEU"]) {
             await request(`/admin/hemocentros/${centroB.hemocentro.id}/agendamentos/${ausenteId}/status`, {
                 method: "PATCH", headers: auth(adminLogin.token), body: JSON.stringify({ status }),
@@ -209,6 +276,7 @@ async function main() {
         if (idsHemocentro.length || idsDoador.length) {
             await prisma.$transaction(async (tx) => {
                 await tx.movimentacaoEstoque.deleteMany({ where: { estoque: { hemocentroId: { in: idsHemocentro } } } });
+                await tx.triagem.deleteMany({ where: { doadorId: { in: idsDoador } } });
                 await tx.agendamento.deleteMany({ where: { OR: [
                     { hemocentroId: { in: idsHemocentro } },
                     { doadorId: { in: idsDoador } },

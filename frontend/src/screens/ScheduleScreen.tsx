@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,11 +13,12 @@ import { getApiErrorMessage } from '@/services/api';
 import { buscarAgendamentosDoador, buscarHemocentros, buscarVagasDisponiveis, criarAgendamento, type AgendamentoDoador, type HemocentroPublico } from '@/services/agendamentoApi';
 import { colors, spacing, typography } from '@/theme';
 import type { VagaHemocentro } from '@/types/hemocentro';
-import type { AppTabParamList } from '@/types/navigation';
+import type { AppTabParamList, RootStackParamList } from '@/types/navigation';
 
 type Props = BottomTabScreenProps<AppTabParamList, 'Schedule'>;
 
 export function ScheduleScreen({ route }: Props) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { sessao } = useDonorSession();
   const [hemocentros, setHemocentros] = useState<HemocentroPublico[]>([]);
   const [agendamentos, setAgendamentos] = useState<AgendamentoDoador[]>([]);
@@ -57,10 +60,14 @@ export function ScheduleScreen({ route }: Props) {
     }
     setSalvando(true); setErro(''); setMensagem('');
     try {
-      await criarAgendamento(sessao.token, sessao.doador.id, selecionado, data, horario);
-      setData(''); setHorario(''); setMensagem('Agendamento criado com sucesso.');
+      const response = await criarAgendamento(sessao.token, sessao.doador.id, selecionado, data, horario);
+      setData(''); setHorario(''); setMensagem('Horário reservado. Conclua a triagem para confirmar.');
       await carregar();
       setVagas(await buscarVagasDisponiveis(selecionado));
+      navigation.navigate('Triage', {
+        doadorId: sessao.doador.id,
+        agendamentoId: response.agendamento.id,
+      });
     } catch (error) { setErro(getApiErrorMessage(error, 'Não foi possível criar o agendamento.')); }
     finally { setSalvando(false); }
   }
@@ -118,8 +125,21 @@ export function ScheduleScreen({ route }: Props) {
                   {appointment.data.slice(0, 10)} às {appointment.horario}
                 </Text>
               </View>
-              <View style={[styles.statusPill, appointment.status === 'AGENDADO' && styles.pendingPill]}>
-                <Text style={styles.statusText}>{appointment.status}</Text>
+              <View style={styles.statusActions}>
+                <View style={[styles.statusPill, ['AGUARDANDO_TRIAGEM', 'AGENDADO'].includes(appointment.status) && styles.pendingPill]}>
+                  <Text style={styles.statusText}>{appointment.status.replaceAll('_', ' ')}</Text>
+                </View>
+                {appointment.status === 'AGUARDANDO_TRIAGEM' ? (
+                  <Pressable
+                    onPress={() => navigation.navigate('Triage', {
+                      doadorId: sessao!.doador.id,
+                      agendamentoId: appointment.id,
+                    })}
+                    style={styles.triageLink}
+                  >
+                    <Text style={styles.triageLinkText}>FAZER TRIAGEM</Text>
+                  </Pressable>
+                ) : null}
               </View>
             </View>
           ))}
@@ -213,8 +233,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
   },
+  statusActions: {
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
   statusText: {
     color: colors.white,
+    fontSize: typography.size.tiny,
+    fontWeight: '900',
+  },
+  triageLink: {
+    borderColor: colors.primary[400],
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+  },
+  triageLinkText: {
+    color: colors.primary[500],
     fontSize: typography.size.tiny,
     fontWeight: '900',
   },

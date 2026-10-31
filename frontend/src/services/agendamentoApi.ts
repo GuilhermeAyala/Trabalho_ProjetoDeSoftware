@@ -10,6 +10,11 @@ export type AgendamentoDoador = {
   hemocentro: { id: number; nome: string; endereco: string };
 };
 
+export type CriarAgendamentoResponse = {
+  message: string;
+  agendamento: AgendamentoDoador;
+};
+
 export async function buscarHemocentros() {
   const response = await api.get<HemocentroPublico[]>('/hemocentros');
   return response.data;
@@ -28,6 +33,6 @@ export async function buscarAgendamentosDoador(token: string, doadorId: number) 
 }
 
 export async function criarAgendamento(token: string, doadorId: number, hemocentroId: number, data: string, horario: string) {
-  const response = await api.post('/agendamentos', { doadorId, hemocentroId, data, horario }, auth(token));
+  const response = await api.post<CriarAgendamentoResponse>('/agendamentos', { doadorId, hemocentroId, data, horario }, auth(token));
   return response.data;
 }

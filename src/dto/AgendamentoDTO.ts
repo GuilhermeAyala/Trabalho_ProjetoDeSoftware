@@ -26,6 +26,7 @@ export interface AgendamentoDTO {
  * HTTP enquanto não houver necessidade de criar um enum no banco.
  */
 export const STATUS_AGENDAMENTO = [
+    "AGUARDANDO_TRIAGEM",
     "AGENDADO",
     "CONFIRMADO",
     "REALIZADO",

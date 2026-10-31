@@ -200,3 +200,80 @@ SELECT * FROM "Hemocentro";
 - O administrador inicial é voltado ao ambiente local de demonstração. Antes de qualquer implantação compartilhada, a senha padrão deve ser trocada usando `ADMIN_SEED_PASSWORD`.
 - A sessão de administrador, como as demais sessões do aplicativo, permanece em memória e exige novo login após recarregar o frontend.
 - A decisão de aprovação é informada ao hemocentro na tela de login. O sistema ainda não envia e-mail ou notificação externa.
+
+## Atualizações da sessão de 31/10/2026 — Triagem vinculada ao agendamento
+
+**Data: 31/10/2026**
+
+O fluxo de agendamento passou a exigir a triagem do doador antes da confirmação do horário. A reserva continua sendo feita no momento do agendamento, mas permanece com o status `AGUARDANDO_TRIAGEM` até que o questionário seja concluído.
+
+### Fluxo da triagem
+
+```text
+Doador escolhe uma vaga
+        |
+        v
+Agendamento criado como AGUARDANDO_TRIAGEM
+        |
+        v
+Doador responde à triagem
+        |
+        +--> APTO: status muda para AGENDADO
+        |
+        +--> INAPTO: status muda para CANCELADO e a vaga é liberada
+```
+
+Quando a triagem reprova o doador, o sistema salva o resultado, cancela o agendamento e diminui a quantidade de reservas da vaga na mesma transação do PostgreSQL. O doador recebe o aviso: “Sua triagem não foi aprovada. O agendamento foi cancelado e a vaga foi liberada.”
+
+### Alterações no backend
+
+- `Agendamento.status` passou a iniciar como `AGUARDANDO_TRIAGEM`;
+- `Triagem` recebeu o vínculo opcional `agendamentoId`;
+- o endpoint de triagem aceita o identificador do agendamento;
+- o repository valida que o agendamento pertence ao doador e ainda aguarda triagem;
+- uma nova triagem não pode ser feita para um agendamento já processado;
+- o hemocentro não pode confirmar um agendamento que ainda aguarda triagem;
+- o retorno da API informa se o agendamento foi cancelado;
+- a mensagem de criação informa que o horário foi reservado e que a triagem deve ser concluída;
+- o adaptador PostgreSQL passou a respeitar o parâmetro `schema` da `DATABASE_URL`, permitindo separar corretamente bancos ou schemas locais e de teste.
+
+### Alterações no frontend
+
+Após criar um agendamento, o aplicativo abre automaticamente a tela de triagem e envia o `agendamentoId`. Se o doador sair antes de responder, o agendamento aparece como `AGUARDANDO TRIAGEM` e oferece o botão **FAZER TRIAGEM** para retomar o fluxo.
+
+Na tela de resultado:
+
+- a aprovação informa que o agendamento foi confirmado;
+- a reprovação informa que o agendamento foi cancelado e a vaga liberada;
+- o botão de retorno leva o doador para a lista de agendamentos;
+- a triagem independente, acessada pela tela inicial, continua disponível.
+
+### Arquivos alterados nesta sessão
+
+- `prisma/schema.prisma`;
+- `src/config/prisma.ts`;
+- `src/controller/AgendamentoController.ts`;
+- `src/controller/TriagemController.ts`;
+- `src/dto/AgendamentoDTO.ts`;
+- `src/dto/TriagemDTO.ts`;
+- `src/repository/AgendamentoRepository.ts`;
+- `src/repository/TriagemRepository.ts`;
+- `src/service/HemocentroService.ts`;
+- `src/service/TriagemService.ts`;
+- `frontend/src/screens/ScheduleScreen.tsx`;
+- `frontend/src/screens/TriageScreen.tsx`;
+- `frontend/src/services/agendamentoApi.ts`;
+- `frontend/src/services/triageApi.ts`;
+- `frontend/src/types/hemocentro.ts`;
+- `frontend/src/types/navigation.ts`;
+- `frontend/src/types/triage.ts`;
+- `tests/hemocentro.e2e.ts`.
+
+### Validações realizadas nesta sessão
+
+- `npx prisma generate`: passou;
+- `npm run build`: passou;
+- `npm run typecheck` no frontend: passou;
+- `npm test`: passou;
+- teste E2E passou com triagem aprovada, triagem reprovada, devolução da vaga, bloqueio de confirmação antes da triagem e bloqueio de uma segunda triagem para o mesmo agendamento;
+- o schema isolado de PostgreSQL foi criado, validado e removido após os testes.

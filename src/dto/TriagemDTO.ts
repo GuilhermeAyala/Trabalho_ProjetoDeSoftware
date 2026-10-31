@@ -10,13 +10,16 @@ export interface RespostasTriagemDTO {
 
 export interface RealizarTriagemDTO {
     doadorId: number;
+    agendamentoId?: number;
     respostas: RespostasTriagemDTO;
 }
 
 export interface ResultadoTriagemDTO {
     id: number;
     doadorId: number;
+    agendamentoId: number | null;
     apto: boolean;
     motivosInaptidao: string[];
     realizadaEm: Date;
+    agendamentoCancelado: boolean;
 }

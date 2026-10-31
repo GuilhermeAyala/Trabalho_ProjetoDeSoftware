@@ -60,6 +60,7 @@ export function TriageScreen({ navigation, route }: Props) {
       if (!sessao) throw new Error('Entre na sua conta de doador para realizar a triagem.');
       const response = await realizarTriagem(sessao.token, {
         doadorId: sessao.doador.id,
+        agendamentoId: route.params.agendamentoId,
         respostas: answers as TriageAnswers,
       });
 
@@ -102,7 +103,9 @@ export function TriageScreen({ navigation, route }: Props) {
 
             {result.apto ? (
               <Text style={styles.resultDescription}>
-                Sua pré-triagem não identificou impedimentos. Você pode continuar o fluxo de agendamento.
+                {route.params.agendamentoId
+                  ? 'Sua triagem foi aprovada e o agendamento está confirmado.'
+                  : 'Sua pré-triagem não identificou impedimentos. Você pode continuar o fluxo de agendamento.'}
               </Text>
             ) : (
               <View style={styles.criteriaCard}>
@@ -122,12 +125,16 @@ export function TriageScreen({ navigation, route }: Props) {
             </View>
 
             <PrimaryButton
-              label={result.apto ? 'AGENDAR DOAÇÃO' : 'VOLTAR AO INÍCIO'}
-              onPress={() => result.apto
+              label={route.params.agendamentoId
+                ? 'VER AGENDAMENTOS'
+                : result.apto ? 'AGENDAR DOAÇÃO' : 'VOLTAR AO INÍCIO'}
+              onPress={() => route.params.agendamentoId || result.apto
                 ? navigation.navigate('AppTabs', { screen: 'Schedule' })
                 : navigation.navigate('AppTabs', { screen: 'Home' })}
             />
-            <PrimaryButton label="REFAZER TRIAGEM" onPress={restartTriage} variant="light" />
+            {!route.params.agendamentoId ? (
+              <PrimaryButton label="REFAZER TRIAGEM" onPress={restartTriage} variant="light" />
+            ) : null}
           </View>
         ) : (
           <>
@@ -136,7 +143,9 @@ export function TriageScreen({ navigation, route }: Props) {
               <View style={styles.introTextContainer}>
                 <Text style={styles.introTitle}>Antes de doar</Text>
                 <Text style={styles.introText}>
-                  Responda com sinceridade. Esta avaliação é preliminar e não substitui a triagem clínica do hemocentro.
+                  {route.params.agendamentoId
+                    ? 'Responda com sinceridade para confirmar seu agendamento. Se a triagem não for aprovada, o agendamento será cancelado e a vaga será liberada.'
+                    : 'Responda com sinceridade. Esta avaliação é preliminar e não substitui a triagem clínica do hemocentro.'}
                 </Text>
               </View>
             </View>

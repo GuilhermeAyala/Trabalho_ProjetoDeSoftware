@@ -18,6 +18,9 @@ export class TriagemService {
         }
 
         this.validarId(dados.doadorId);
+        if (dados.agendamentoId !== undefined) {
+            this.validarId(dados.agendamentoId, "agendamento");
+        }
         this.validarRespostas(dados.respostas);
 
         const doador = await this.doadorService.buscarDoador(dados.doadorId);
@@ -29,12 +32,24 @@ export class TriagemService {
 
         // Este resultado é uma pré-triagem informativa. A decisão clínica final
         // continua sendo responsabilidade do profissional no hemocentro.
-        return this.triagemRepository.salvar(
+        const apto = motivosInaptidao.length === 0;
+        if (dados.agendamentoId !== undefined) {
+            return this.triagemRepository.salvarParaAgendamento(
+                dados.doadorId,
+                dados.agendamentoId,
+                dados.respostas,
+                apto,
+                motivosInaptidao,
+            );
+        }
+
+        const triagem = await this.triagemRepository.salvar(
             dados.doadorId,
             dados.respostas,
-            motivosInaptidao.length === 0,
+            apto,
             motivosInaptidao,
         );
+        return { ...triagem, agendamentoCancelado: false };
     }
 
     async buscarUltimaTriagem(doadorId: number) {
@@ -42,9 +57,9 @@ export class TriagemService {
         return this.triagemRepository.buscarUltimaPorDoador(doadorId);
     }
 
-    private validarId(id: number) {
+    private validarId(id: number, entidade = "doador") {
         if (!Number.isInteger(id) || id <= 0) {
-            throw new Error("Id do doador inválido");
+            throw new Error(`Id do ${entidade} inválido`);
         }
     }
 

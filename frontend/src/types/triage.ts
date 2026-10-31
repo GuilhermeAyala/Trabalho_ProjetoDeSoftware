@@ -11,9 +11,11 @@ export type TriageAnswers = {
 export type TriageResult = {
   id: number;
   doadorId: number;
+  agendamentoId: number | null;
   apto: boolean;
   motivosInaptidao: string[];
   realizadaEm: string;
+  agendamentoCancelado: boolean;
 };
 
 export type TriageResponse = {
