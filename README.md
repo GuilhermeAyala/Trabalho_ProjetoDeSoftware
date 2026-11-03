@@ -1,6 +1,6 @@
 # Projeto de Software: Sistema VITTA
 
-O VITTA usa Docker Compose para executar o front-end, a API e o PostgreSQL juntos.
+O VITTA usa Docker Compose para executar o front-end, a API, o PostgreSQL e o Redis juntos. O PostgreSQL é a fonte de verdade e o Redis mantém somente caches descartáveis de agendamento, triagem e vagas.
 
 ## Pré-requisitos
 
@@ -53,13 +53,14 @@ Use esse comando quando alguém alterar `Dockerfile`, `package.json`, dependênc
 docker compose ps
 ```
 
-O esperado é `postgres` e `api` como `healthy`, e `frontend` como `running`.
+O esperado é `postgres`, `redis` e `api` como `healthy`, e `frontend` como `running`.
 
 Endereços locais:
 
 - Front-end: [http://localhost:8081](http://localhost:8081)
 - API: [http://localhost:3000](http://localhost:3000)
 - PostgreSQL: `localhost:5433`
+- Redis: `localhost:6380`
 
 ### Iniciar novamente após usar `stop`
 
@@ -83,7 +84,7 @@ Para retornar depois, use `docker compose start`.
 docker compose down
 ```
 
-Na próxima vez, execute `docker compose up -d` ou `docker compose up --build -d`. O volume `vitta_postgres_data` permanece, portanto os dados do banco são preservados.
+Na próxima vez, execute `docker compose up -d` ou `docker compose up --build -d`. O volume `vitta_postgres_data` permanece, portanto os dados do banco são preservados. O Redis não possui volume: seu cache é recriado a partir do PostgreSQL.
 
 ### Acompanhar logs
 
@@ -117,13 +118,14 @@ docker compose up --build -d api
 
 ### Validar a aplicação
 
-Com a stack em execução, os comandos abaixo verificam a API, o front-end e o PostgreSQL:
+Com a stack em execução, os comandos abaixo verificam a API, o front-end, o PostgreSQL e o Redis:
 
 ```powershell
 curl.exe http://localhost:3000/
 curl.exe http://localhost:3000/hemocentros
 curl.exe -I http://localhost:8081/
 docker compose exec postgres pg_isready -U vitta -d vitta
+docker compose exec redis redis-cli ping
 ```
 
 Para executar a validação completa do fluxo de hemocentro, que cria e remove dados temporários de teste:

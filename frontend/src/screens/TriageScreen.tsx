@@ -1,107 +1,42 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useDonorSession } from '@/context/DonorSession';
-import { getApiErrorMessage } from '@/services/api';
-import { realizarTriagem } from '@/services/triageApi';
 import { colors, spacing, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
-import type { TriageAnswers, TriageResult } from '@/types/triage';
+import { useTriageViewModel } from '@/viewmodels/useTriageViewModel';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Triage'>;
-type AnswerKey = keyof TriageAnswers;
-type PartialAnswers = Partial<Record<AnswerKey, boolean>>;
-
-// As chaves abaixo são exatamente as mesmas esperadas pelo DTO do backend.
-// Dessa forma, alterar uma pergunta exige uma mudança explícita no contrato.
-const questions: { key: AnswerKey; text: string }[] = [
-  { key: 'estaEmBoasCondicoesDeSaude', text: 'Você está em boas condições de saúde hoje?' },
-  { key: 'pesaNoMinimo50Kg', text: 'Você pesa pelo menos 50 kg?' },
-  { key: 'dormiuPeloMenosSeisHoras', text: 'Você dormiu pelo menos 6 horas nas últimas 24 horas?' },
-  { key: 'estaAlimentado', text: 'Você está alimentado e evitou alimentos muito gordurosos?' },
-  { key: 'consumiuAlcoolNasUltimas12Horas', text: 'Você consumiu bebida alcoólica nas últimas 12 horas?' },
-  { key: 'possuiSintomasInfecciosos', text: 'Você está com febre, gripe ou outro sintoma infeccioso?' },
-  { key: 'fezProcedimentoDeRiscoRecente', text: 'Você fez tatuagem, piercing ou outro procedimento de risco recentemente?' },
-];
 
 export function TriageScreen({ navigation, route }: Props) {
   const { sessao } = useDonorSession();
-  const [answers, setAnswers] = useState<PartialAnswers>({});
-  const [result, setResult] = useState<TriageResult | null>(null);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const allQuestionsAnswered = useMemo(
-    () => questions.every(({ key }) => typeof answers[key] === 'boolean'),
-    [answers],
+  const viewModelSession = useMemo(
+    () => sessao ? { token: sessao.token, doadorId: sessao.doador.id } : null,
+    [sessao?.doador.id, sessao?.token],
   );
-
-  function answerQuestion(key: AnswerKey, value: boolean) {
-    setAnswers((current) => ({ ...current, [key]: value }));
-    setError('');
-  }
-
-  async function submitTriage() {
-    if (!allQuestionsAnswered) {
-      setError('Responda todas as perguntas antes de continuar.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      if (!sessao) throw new Error('Entre na sua conta de doador para realizar a triagem.');
-      const response = await realizarTriagem(sessao.token, {
-        doadorId: sessao.doador.id,
-        agendamentoId: route.params.agendamentoId,
-        respostas: answers as TriageAnswers,
-      });
-
-      setResult(response.resultado);
-      setNotice(response.aviso);
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'Não foi possível concluir a triagem.'));
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function restartTriage() {
-    setAnswers({});
-    setResult(null);
-    setNotice('');
-    setError('');
-  }
+  const vm = useTriageViewModel(viewModelSession, route.params.agendamentoId);
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <ScreenHeader onBack={() => navigation.goBack()} title="Triagem para doação" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {result ? (
+        {vm.result ? (
           <View style={styles.resultContainer}>
-            <View style={[styles.resultIcon, result.apto ? styles.successIcon : styles.warningIcon]}>
-              <Ionicons
-                color={colors.white}
-                name={result.apto ? 'checkmark' : 'alert'}
-                size={42}
-              />
+            <View style={[styles.resultIcon, vm.result.apto ? styles.successIcon : styles.warningIcon]}>
+              <Ionicons color={colors.white} name={vm.result.apto ? 'checkmark' : 'alert'} size={42} />
             </View>
 
-            <Text style={[styles.resultTitle, result.apto ? styles.successText : styles.warningText]}>
-              {result.apto
-                ? 'Você está apto para a doação!'
-                : 'Você não está apto para a doação.'}
+            <Text style={[styles.resultTitle, vm.result.apto ? styles.successText : styles.warningText]}>
+              {vm.result.apto ? 'Você está apto para a doação!' : 'Você não está apto para a doação.'}
             </Text>
 
-            {result.apto ? (
+            {vm.result.apto ? (
               <Text style={styles.resultDescription}>
                 {route.params.agendamentoId
                   ? 'Sua triagem foi aprovada e o agendamento está confirmado.'
@@ -110,7 +45,7 @@ export function TriageScreen({ navigation, route }: Props) {
             ) : (
               <View style={styles.criteriaCard}>
                 <Text style={styles.criteriaTitle}>Critérios não atingidos:</Text>
-                {result.motivosInaptidao.map((reason) => (
+                {vm.result.motivosInaptidao.map((reason) => (
                   <View key={reason} style={styles.reasonRow}>
                     <Ionicons color={colors.primary[400]} name="close-circle" size={20} />
                     <Text style={styles.reasonText}>{reason}</Text>
@@ -121,19 +56,19 @@ export function TriageScreen({ navigation, route }: Props) {
 
             <View style={styles.noticeCard}>
               <Ionicons color={colors.secondary[400]} name="information-circle" size={22} />
-              <Text style={styles.noticeText}>{notice}</Text>
+              <Text style={styles.noticeText}>{vm.notice}</Text>
             </View>
 
             <PrimaryButton
               label={route.params.agendamentoId
                 ? 'VER AGENDAMENTOS'
-                : result.apto ? 'AGENDAR DOAÇÃO' : 'VOLTAR AO INÍCIO'}
-              onPress={() => route.params.agendamentoId || result.apto
+                : vm.result.apto ? 'AGENDAR DOAÇÃO' : 'VOLTAR AO INÍCIO'}
+              onPress={() => route.params.agendamentoId || vm.result?.apto
                 ? navigation.navigate('AppTabs', { screen: 'Schedule' })
                 : navigation.navigate('AppTabs', { screen: 'Home' })}
             />
             {!route.params.agendamentoId ? (
-              <PrimaryButton label="REFAZER TRIAGEM" onPress={restartTriage} variant="light" />
+              <PrimaryButton label="REFAZER TRIAGEM" onPress={vm.restartTriage} variant="light" />
             ) : null}
           </View>
         ) : (
@@ -153,25 +88,24 @@ export function TriageScreen({ navigation, route }: Props) {
             <View style={styles.progressRow}>
               <Text style={styles.progressLabel}>Questionário</Text>
               <Text style={styles.progressValue}>
-                {Object.keys(answers).length}/{questions.length} respondidas
+                {Object.keys(vm.answers).length}/{vm.questions.length} respondidas
               </Text>
             </View>
 
             <View style={styles.questionsList}>
-              {questions.map((question, index) => (
+              {vm.questions.map((question, index) => (
                 <View key={question.key} style={styles.questionCard}>
                   <Text style={styles.questionNumber}>PERGUNTA {index + 1}</Text>
                   <Text style={styles.questionText}>{question.text}</Text>
                   <View style={styles.answerRow}>
                     {[true, false].map((value) => {
-                      const selected = answers[question.key] === value;
-
+                      const selected = vm.answers[question.key] === value;
                       return (
                         <Pressable
                           accessibilityRole="radio"
                           accessibilityState={{ checked: selected }}
                           key={String(value)}
-                          onPress={() => answerQuestion(question.key, value)}
+                          onPress={() => vm.answerQuestion(question.key, value)}
                           style={({ pressed }) => [
                             styles.answerButton,
                             selected && styles.answerButtonSelected,
@@ -194,17 +128,17 @@ export function TriageScreen({ navigation, route }: Props) {
               ))}
             </View>
 
-            {error ? (
+            {vm.error ? (
               <View style={styles.errorCard}>
                 <Ionicons color={colors.primary[500]} name="alert-circle" size={20} />
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText}>{vm.error}</Text>
               </View>
             ) : null}
 
             <PrimaryButton
-              disabled={isLoading}
-              label={isLoading ? 'ENVIANDO...' : 'VER RESULTADO'}
-              onPress={submitTriage}
+              disabled={vm.isLoading}
+              label={vm.isLoading ? 'ENVIANDO...' : 'VER RESULTADO'}
+              onPress={() => void vm.submitTriage()}
             />
           </>
         )}
@@ -212,7 +146,6 @@ export function TriageScreen({ navigation, route }: Props) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   answerButton: {
     alignItems: 'center',

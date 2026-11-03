@@ -19,6 +19,20 @@ services:
       retries: 12
       start_period: 10s
 
+  redis:
+    image: redis:7.4-alpine
+    # Cache descartável: todos os dados podem ser reconstruídos do PostgreSQL.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      # 6380 evita conflito com um Redis local que use a porta padrão 6379.
+      - "${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
   api:
     build:
       context: .
@@ -28,10 +42,14 @@ services:
       HEMOCENTRO_AUTH_SECRET: ${HEMOCENTRO_AUTH_SECRET:-vitta_dev_hemocentro_secret_change_me_2026}
       CPF_ENCRYPTION_KEY: ${CPF_ENCRYPTION_KEY:-vitta_dev_cpf_encryption_key_change_me_2026}
       ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-VittaAdmin@2026}
+      REDIS_URL: redis://redis:6379
+      REDIS_CACHE_TTL_SECONDS: ${REDIS_CACHE_TTL_SECONDS:-60}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     # Em ambiente acadêmico, db push cria/sincroniza as tabelas no banco Docker
     # sem modificar o banco PostgreSQL local do desenvolvedor.

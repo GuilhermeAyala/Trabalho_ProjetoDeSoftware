@@ -1,17 +1,91 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SectionTitle } from '@/components/SectionTitle';
-import { appointmentsMock } from '@/data/appointmentsMock';
-import { bloodCentersMock } from '@/data/bloodCentersMock';
+import { useDonorSession } from '@/context/DonorSession';
 import { colors, spacing, typography } from '@/theme';
-export function ScheduleScreen() {
-    const suggestedCenter = bloodCentersMock[0];
-    return (_jsx(SafeAreaView, { edges: ['top'], style: styles.safeArea, children: _jsxs(ScrollView, { contentContainerStyle: styles.content, showsVerticalScrollIndicator: false, children: [_jsxs(View, { children: [_jsx(Text, { style: styles.title, children: "Agendar doacao" }), _jsx(Text, { style: styles.subtitle, children: "Escolha um local, confirme o horario e acompanhe seus agendamentos." })] }), suggestedCenter && (_jsxs(View, { style: styles.highlightCard, children: [_jsx(View, { style: styles.highlightIcon, children: _jsx(Ionicons, { color: colors.white, name: "calendar", size: 32 }) }), _jsx(Text, { style: styles.highlightTitle, children: suggestedCenter.name }), _jsx(Text, { style: styles.highlightText, children: suggestedCenter.nextSlot }), _jsx(PrimaryButton, { label: "CONFIRMAR AGENDAMENTO", variant: "light" })] })), _jsx(SectionTitle, { children: "Proximos agendamentos" }), _jsx(View, { style: styles.list, children: appointmentsMock.map((appointment) => (_jsxs(View, { style: styles.appointmentCard, children: [_jsx(View, { style: styles.appointmentIcon, children: _jsx(Ionicons, { color: colors.primary[400], name: "water", size: 22 }) }), _jsxs(View, { style: styles.appointmentInfo, children: [_jsx(Text, { style: styles.appointmentTitle, children: appointment.bloodCenter }), _jsxs(Text, { style: styles.appointmentMeta, children: [appointment.date, " as ", appointment.time] })] }), _jsx(View, { style: [styles.statusPill, appointment.status === 'pending' && styles.pendingPill], children: _jsx(Text, { style: styles.statusText, children: appointment.status === 'confirmed' ? 'Confirmado' : 'Pendente' }) })] }, appointment.id))) })] }) }));
+import { useScheduleViewModel } from '@/viewmodels/useScheduleViewModel';
+export function ScheduleScreen({ route }) {
+    const navigation = useNavigation();
+    const { sessao } = useDonorSession();
+    const viewModelSession = useMemo(() => sessao ? { token: sessao.token, doadorId: sessao.doador.id } : null, [sessao?.doador.id, sessao?.token]);
+    const vm = useScheduleViewModel(viewModelSession, route.params?.hemocentroId);
+    async function confirmar() {
+        const agendamentoId = await vm.confirmar();
+        if (agendamentoId && sessao) {
+            navigation.navigate('Triage', {
+                doadorId: sessao.doador.id,
+                agendamentoId,
+            });
+        }
+    }
+    return (<SafeAreaView edges={['top']} style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View>
+          <Text style={styles.title}>Agendar doação</Text>
+          <Text style={styles.subtitle}>Escolha um local e um horário aberto pelo hemocentro.</Text>
+        </View>
+
+        {vm.carregando ? <Text style={styles.subtitle}>Carregando...</Text> : null}
+        {vm.erro ? <Text style={styles.error}>{vm.erro}</Text> : null}
+        {vm.mensagem ? <Text style={styles.success}>{vm.mensagem}</Text> : null}
+        {vm.erro ? <PrimaryButton label="TENTAR NOVAMENTE" variant="light" onPress={() => void vm.recarregar()}/> : null}
+
+        <SectionTitle>Escolha o hemocentro</SectionTitle>
+        {vm.hemocentros.map((item) => (<Pressable key={item.id} onPress={() => vm.selecionarHemocentro(item.id)} style={[styles.centerOption, vm.selecionado === item.id && styles.centerSelected]}>
+            <Text style={styles.appointmentTitle}>{item.nome}</Text>
+            <Text style={styles.appointmentMeta}>{item.endereco}</Text>
+          </Pressable>))}
+
+        {vm.hemocentroSelecionado && (<View style={styles.highlightCard}>
+            <View style={styles.highlightIcon}>
+              <Ionicons color={colors.white} name="calendar" size={32}/>
+            </View>
+            <Text style={styles.highlightTitle}>{vm.hemocentroSelecionado.nome}</Text>
+            <Text style={styles.highlightText}>Horários disponíveis</Text>
+            <View style={styles.fields}>
+              {vm.vagas.length === 0 ? <Text style={styles.appointmentMeta}>Nenhum horário disponível no momento.</Text> : null}
+              {vm.vagas.map((vaga) => (<Pressable key={vaga.id} onPress={() => vm.selecionarVaga(vaga)} style={[styles.centerOption, vm.data === vaga.data.slice(0, 10) && vm.horario === vaga.horario && styles.centerSelected]}>
+                  <Text style={styles.appointmentTitle}>{vaga.data.slice(0, 10)} às {vaga.horario}</Text>
+                  <Text style={styles.appointmentMeta}>{vaga.capacidade - vaga.reservadas} vagas livres</Text>
+                </Pressable>))}
+            </View>
+            <PrimaryButton label={vm.salvando ? 'AGENDANDO...' : 'CONFIRMAR AGENDAMENTO'} disabled={vm.salvando || !vm.data || !vm.horario} onPress={() => void confirmar()} variant="light"/>
+          </View>)}
+
+        <SectionTitle>Próximos agendamentos</SectionTitle>
+        <View style={styles.list}>
+          {vm.agendamentos.length === 0 && !vm.carregando ? <Text style={styles.subtitle}>Nenhum agendamento encontrado.</Text> : null}
+          {vm.agendamentos.map((appointment) => (<View key={appointment.id} style={styles.appointmentCard}>
+              <View style={styles.appointmentIcon}>
+                <Ionicons color={colors.primary[400]} name="water" size={22}/>
+              </View>
+              <View style={styles.appointmentInfo}>
+                <Text style={styles.appointmentTitle}>{appointment.hemocentro.nome}</Text>
+                <Text style={styles.appointmentMeta}>{appointment.data.slice(0, 10)} às {appointment.horario}</Text>
+              </View>
+              <View style={styles.statusActions}>
+                <View style={[styles.statusPill, ['AGUARDANDO_TRIAGEM', 'AGENDADO'].includes(appointment.status) && styles.pendingPill]}>
+                  <Text style={styles.statusText}>{appointment.status.replaceAll('_', ' ')}</Text>
+                </View>
+                {appointment.status === 'AGUARDANDO_TRIAGEM' ? (<Pressable onPress={() => navigation.navigate('Triage', { doadorId: sessao.doador.id, agendamentoId: appointment.id })} style={styles.triageLink}>
+                    <Text style={styles.triageLinkText}>FAZER TRIAGEM</Text>
+                  </Pressable>) : null}
+              </View>
+            </View>))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>);
 }
 const styles = StyleSheet.create({
+    centerOption: { borderColor: colors.border, borderRadius: 12, borderWidth: 1.5, gap: 4, padding: spacing.lg },
+    centerSelected: { backgroundColor: colors.softPrimary, borderColor: colors.primary[400] },
+    fields: { alignSelf: 'stretch', backgroundColor: colors.white, borderRadius: 12, gap: spacing.md, padding: spacing.lg, width: '100%' },
+    error: { color: colors.primary[600], fontSize: typography.size.md, fontWeight: '700' },
+    success: { color: '#087F54', fontSize: typography.size.md, fontWeight: '700' },
     appointmentCard: {
         alignItems: 'center',
         backgroundColor: colors.white,
@@ -90,8 +164,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: 5,
     },
+    statusActions: {
+        alignItems: 'flex-end',
+        gap: spacing.sm,
+    },
     statusText: {
         color: colors.white,
+        fontSize: typography.size.tiny,
+        fontWeight: '900',
+    },
+    triageLink: {
+        borderColor: colors.primary[400],
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 5,
+    },
+    triageLinkText: {
+        color: colors.primary[500],
         fontSize: typography.size.tiny,
         fontWeight: '900',
     },

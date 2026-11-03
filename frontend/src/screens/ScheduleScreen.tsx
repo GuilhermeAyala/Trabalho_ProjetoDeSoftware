@@ -2,141 +2,97 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SectionTitle } from '@/components/SectionTitle';
 import { useDonorSession } from '@/context/DonorSession';
-import { getApiErrorMessage } from '@/services/api';
-import { buscarAgendamentosDoador, buscarHemocentros, buscarVagasDisponiveis, criarAgendamento, type AgendamentoDoador, type HemocentroPublico } from '@/services/agendamentoApi';
 import { colors, spacing, typography } from '@/theme';
-import type { VagaHemocentro } from '@/types/hemocentro';
 import type { AppTabParamList, RootStackParamList } from '@/types/navigation';
+import { useScheduleViewModel } from '@/viewmodels/useScheduleViewModel';
 
 type Props = BottomTabScreenProps<AppTabParamList, 'Schedule'>;
 
 export function ScheduleScreen({ route }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { sessao } = useDonorSession();
-  const [hemocentros, setHemocentros] = useState<HemocentroPublico[]>([]);
-  const [agendamentos, setAgendamentos] = useState<AgendamentoDoador[]>([]);
-  const [vagas, setVagas] = useState<VagaHemocentro[]>([]);
-  const [selecionado, setSelecionado] = useState<number | null>(route.params?.hemocentroId ?? null);
-  const [data, setData] = useState('');
-  const [horario, setHorario] = useState('');
-  const [erro, setErro] = useState('');
-  const [mensagem, setMensagem] = useState('');
-  const [carregando, setCarregando] = useState(true);
-  const [salvando, setSalvando] = useState(false);
-
-  useEffect(() => { if (route.params?.hemocentroId) setSelecionado(route.params.hemocentroId); }, [route.params?.hemocentroId]);
-  useEffect(() => {
-    if (!selecionado) { setVagas([]); return; }
-    setData(''); setHorario('');
-    let ativo = true;
-    buscarVagasDisponiveis(selecionado).then((lista) => { if (ativo) setVagas(lista); })
-      .catch((error) => { if (ativo) setErro(getApiErrorMessage(error, 'Não foi possível carregar as vagas.')); });
-    return () => { ativo = false; };
-  }, [selecionado]);
-
-  async function carregar() {
-    setCarregando(true); setErro('');
-    try {
-      if (!sessao) { setErro('Entre na sua conta de doador para acessar os agendamentos.'); return; }
-      const [locais, agenda] = await Promise.all([buscarHemocentros(), buscarAgendamentosDoador(sessao.token, sessao.doador.id)]);
-      setHemocentros(locais); setAgendamentos(agenda);
-      setSelecionado((atual) => atual ?? locais[0]?.id ?? null);
-    } catch (error) { setErro(getApiErrorMessage(error, 'Não foi possível carregar os agendamentos.')); }
-    finally { setCarregando(false); }
-  }
-  useEffect(() => { void carregar(); }, [sessao?.doador.id]);
+  const viewModelSession = useMemo(
+    () => sessao ? { token: sessao.token, doadorId: sessao.doador.id } : null,
+    [sessao?.doador.id, sessao?.token],
+  );
+  const vm = useScheduleViewModel(viewModelSession, route.params?.hemocentroId);
 
   async function confirmar() {
-    if (!sessao) { setErro('Entre na sua conta de doador para agendar.'); return; }
-    if (!selecionado || !data.trim() || !horario.trim()) {
-      setErro('Selecione um hemocentro e informe data e horário.'); return;
-    }
-    setSalvando(true); setErro(''); setMensagem('');
-    try {
-      const response = await criarAgendamento(sessao.token, sessao.doador.id, selecionado, data, horario);
-      setData(''); setHorario(''); setMensagem('Horário reservado. Conclua a triagem para confirmar.');
-      await carregar();
-      setVagas(await buscarVagasDisponiveis(selecionado));
+    const agendamentoId = await vm.confirmar();
+    if (agendamentoId && sessao) {
       navigation.navigate('Triage', {
         doadorId: sessao.doador.id,
-        agendamentoId: response.agendamento.id,
+        agendamentoId,
       });
-    } catch (error) { setErro(getApiErrorMessage(error, 'Não foi possível criar o agendamento.')); }
-    finally { setSalvando(false); }
+    }
   }
-
-  const suggestedCenter = hemocentros.find((item) => item.id === selecionado);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View>
-          <Text style={styles.title}>Agendar doacao</Text>
+          <Text style={styles.title}>Agendar doação</Text>
           <Text style={styles.subtitle}>Escolha um local e um horário aberto pelo hemocentro.</Text>
         </View>
 
-        {carregando ? <Text style={styles.subtitle}>Carregando...</Text> : null}
-        {erro ? <Text style={styles.error}>{erro}</Text> : null}
-        {mensagem ? <Text style={styles.success}>{mensagem}</Text> : null}
-        {erro ? <PrimaryButton label="TENTAR NOVAMENTE" variant="light" onPress={() => void carregar()} /> : null}
+        {vm.carregando ? <Text style={styles.subtitle}>Carregando...</Text> : null}
+        {vm.erro ? <Text style={styles.error}>{vm.erro}</Text> : null}
+        {vm.mensagem ? <Text style={styles.success}>{vm.mensagem}</Text> : null}
+        {vm.erro ? <PrimaryButton label="TENTAR NOVAMENTE" variant="light" onPress={() => void vm.recarregar()} /> : null}
 
         <SectionTitle>Escolha o hemocentro</SectionTitle>
-        {hemocentros.map((item) => <Pressable key={item.id} onPress={() => setSelecionado(item.id)} style={[styles.centerOption, selecionado === item.id && styles.centerSelected]}>
-          <Text style={styles.appointmentTitle}>{item.nome}</Text>
-          <Text style={styles.appointmentMeta}>{item.endereco}</Text>
-        </Pressable>)}
+        {vm.hemocentros.map((item) => (
+          <Pressable key={item.id} onPress={() => vm.selecionarHemocentro(item.id)} style={[styles.centerOption, vm.selecionado === item.id && styles.centerSelected]}>
+            <Text style={styles.appointmentTitle}>{item.nome}</Text>
+            <Text style={styles.appointmentMeta}>{item.endereco}</Text>
+          </Pressable>
+        ))}
 
-        {suggestedCenter && (
+        {vm.hemocentroSelecionado && (
           <View style={styles.highlightCard}>
             <View style={styles.highlightIcon}>
               <Ionicons color={colors.white} name="calendar" size={32} />
             </View>
-            <Text style={styles.highlightTitle}>{suggestedCenter.nome}</Text>
+            <Text style={styles.highlightTitle}>{vm.hemocentroSelecionado.nome}</Text>
             <Text style={styles.highlightText}>Horários disponíveis</Text>
             <View style={styles.fields}>
-              {vagas.length === 0 ? <Text style={styles.appointmentMeta}>Nenhum horário disponível no momento.</Text> : null}
-              {vagas.map((vaga) => <Pressable key={vaga.id} onPress={() => { setData(vaga.data.slice(0, 10)); setHorario(vaga.horario); }} style={[styles.centerOption, data === vaga.data.slice(0, 10) && horario === vaga.horario && styles.centerSelected]}>
-                <Text style={styles.appointmentTitle}>{vaga.data.slice(0, 10)} às {vaga.horario}</Text>
-                <Text style={styles.appointmentMeta}>{vaga.capacidade - vaga.reservadas} vagas livres</Text>
-              </Pressable>)}
+              {vm.vagas.length === 0 ? <Text style={styles.appointmentMeta}>Nenhum horário disponível no momento.</Text> : null}
+              {vm.vagas.map((vaga) => (
+                <Pressable key={vaga.id} onPress={() => vm.selecionarVaga(vaga)} style={[styles.centerOption, vm.data === vaga.data.slice(0, 10) && vm.horario === vaga.horario && styles.centerSelected]}>
+                  <Text style={styles.appointmentTitle}>{vaga.data.slice(0, 10)} às {vaga.horario}</Text>
+                  <Text style={styles.appointmentMeta}>{vaga.capacidade - vaga.reservadas} vagas livres</Text>
+                </Pressable>
+              ))}
             </View>
-            <PrimaryButton label={salvando ? 'AGENDANDO...' : 'CONFIRMAR AGENDAMENTO'} disabled={salvando || !data || !horario} onPress={() => void confirmar()} variant="light" />
+            <PrimaryButton label={vm.salvando ? 'AGENDANDO...' : 'CONFIRMAR AGENDAMENTO'} disabled={vm.salvando || !vm.data || !vm.horario} onPress={() => void confirmar()} variant="light" />
           </View>
         )}
 
-        <SectionTitle>Proximos agendamentos</SectionTitle>
+        <SectionTitle>Próximos agendamentos</SectionTitle>
         <View style={styles.list}>
-          {agendamentos.length === 0 && !carregando ? <Text style={styles.subtitle}>Nenhum agendamento encontrado.</Text> : null}
-          {agendamentos.map((appointment) => (
+          {vm.agendamentos.length === 0 && !vm.carregando ? <Text style={styles.subtitle}>Nenhum agendamento encontrado.</Text> : null}
+          {vm.agendamentos.map((appointment) => (
             <View key={appointment.id} style={styles.appointmentCard}>
               <View style={styles.appointmentIcon}>
                 <Ionicons color={colors.primary[400]} name="water" size={22} />
               </View>
               <View style={styles.appointmentInfo}>
                 <Text style={styles.appointmentTitle}>{appointment.hemocentro.nome}</Text>
-                <Text style={styles.appointmentMeta}>
-                  {appointment.data.slice(0, 10)} às {appointment.horario}
-                </Text>
+                <Text style={styles.appointmentMeta}>{appointment.data.slice(0, 10)} às {appointment.horario}</Text>
               </View>
               <View style={styles.statusActions}>
                 <View style={[styles.statusPill, ['AGUARDANDO_TRIAGEM', 'AGENDADO'].includes(appointment.status) && styles.pendingPill]}>
                   <Text style={styles.statusText}>{appointment.status.replaceAll('_', ' ')}</Text>
                 </View>
                 {appointment.status === 'AGUARDANDO_TRIAGEM' ? (
-                  <Pressable
-                    onPress={() => navigation.navigate('Triage', {
-                      doadorId: sessao!.doador.id,
-                      agendamentoId: appointment.id,
-                    })}
-                    style={styles.triageLink}
-                  >
+                  <Pressable onPress={() => navigation.navigate('Triage', { doadorId: sessao!.doador.id, agendamentoId: appointment.id })} style={styles.triageLink}>
                     <Text style={styles.triageLinkText}>FAZER TRIAGEM</Text>
                   </Pressable>
                 ) : null}
@@ -148,7 +104,6 @@ export function ScheduleScreen({ route }: Props) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   centerOption: { borderColor: colors.border, borderRadius: 12, borderWidth: 1.5, gap: 4, padding: spacing.lg },
   centerSelected: { backgroundColor: colors.softPrimary, borderColor: colors.primary[400] },

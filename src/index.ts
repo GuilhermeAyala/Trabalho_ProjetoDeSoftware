@@ -6,6 +6,7 @@ import { hemocentroRoutes } from "./routes/HemocentroRoutes";
 import { triagemRoutes } from "./routes/TriagemRoutes";
 import { administradorRoutes } from "./routes/AdministradorRoutes";
 import { migrarCpfsLegados } from "./service/CpfMigrationService";
+import { conectarRedis, encerrarRedis, verificarRedis } from "./cache/RedisCache";
 
 dotenv.config();
 
@@ -41,7 +42,18 @@ app.get("/", (_req, res) => {
   res.send("API rodando");
 });
 
+app.get("/health", async (_req, res) => {
+  res.json({
+    api: "ok",
+    postgres: "fonte-de-verdade",
+    redis: await verificarRedis() ? "ok" : "indisponivel",
+  });
+});
+
 async function iniciarServidor() {
+  // A conexão acontece em segundo plano: a indisponibilidade do cache não
+  // impede a API de iniciar e consultar a fonte de verdade no PostgreSQL.
+  void conectarRedis();
   const cpfsMigrados = await migrarCpfsLegados();
   if (cpfsMigrados > 0) {
     console.log(`${cpfsMigrados} CPF(s) legado(s) foram criptografados.`);
@@ -49,6 +61,12 @@ async function iniciarServidor() {
 
   app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
+  });
+}
+
+for (const sinal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(sinal, () => {
+    void encerrarRedis().finally(() => process.exit(0));
   });
 }
 

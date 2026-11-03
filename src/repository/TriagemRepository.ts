@@ -1,4 +1,6 @@
 import { prisma } from "../config/prisma";
+import { cacheKeys, invalidarAgendamentos, invalidarVagas } from "../cache/CacheKeys";
+import { redisCache } from "../cache/RedisCache";
 import type { RespostasTriagemDTO } from "../dto/TriagemDTO";
 
 export class TriagemRepository {
@@ -8,7 +10,7 @@ export class TriagemRepository {
         apto: boolean,
         motivosInaptidao: string[],
     ) {
-        return prisma.triagem.create({
+        const triagem = await prisma.triagem.create({
             data: {
                 doadorId,
                 ...respostas,
@@ -26,6 +28,13 @@ export class TriagemRepository {
                 realizadaEm: true,
             },
         });
+        await redisCache.salvar(cacheKeys.ultimaTriagemDoador(doadorId), {
+            id: triagem.id,
+            doadorId: triagem.doadorId,
+            apto: triagem.apto,
+            realizadaEm: triagem.realizadaEm,
+        });
+        return triagem;
     }
 
     async salvarParaAgendamento(
@@ -35,10 +44,10 @@ export class TriagemRepository {
         apto: boolean,
         motivosInaptidao: string[],
     ) {
-        return prisma.$transaction(async (tx) => {
+        const resultado = await prisma.$transaction(async (tx) => {
             const agendamento = await tx.agendamento.findFirst({
                 where: { id: agendamentoId, doadorId },
-                select: { id: true, status: true, vagaId: true },
+                select: { id: true, status: true, vagaId: true, hemocentroId: true },
             });
 
             if (!agendamento) {
@@ -89,12 +98,27 @@ export class TriagemRepository {
                 },
             });
 
-            return { ...triagem, agendamentoCancelado: !apto };
+            return {
+                triagem: { ...triagem, agendamentoCancelado: !apto },
+                hemocentroId: agendamento.hemocentroId,
+            };
         });
+
+        await Promise.all([
+            redisCache.salvar(cacheKeys.ultimaTriagemDoador(doadorId), {
+                id: resultado.triagem.id,
+                doadorId: resultado.triagem.doadorId,
+                apto: resultado.triagem.apto,
+                realizadaEm: resultado.triagem.realizadaEm,
+            }),
+            invalidarAgendamentos(redisCache, doadorId, resultado.hemocentroId),
+            !apto ? invalidarVagas(redisCache, resultado.hemocentroId) : Promise.resolve(),
+        ]);
+        return resultado.triagem;
     }
 
     async buscarUltimaPorDoador(doadorId: number) {
-        return prisma.triagem.findFirst({
+        return redisCache.buscarOuCarregar(cacheKeys.ultimaTriagemDoador(doadorId), () => prisma.triagem.findFirst({
             where: { doadorId },
             orderBy: { realizadaEm: "desc" },
             // A consulta posterior expõe somente o estado geral. Os motivos e
@@ -105,6 +129,6 @@ export class TriagemRepository {
                 apto: true,
                 realizadaEm: true,
             },
-        });
+        }));
     }
 }

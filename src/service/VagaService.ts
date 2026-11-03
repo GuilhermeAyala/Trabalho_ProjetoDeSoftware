@@ -1,4 +1,6 @@
 import { prisma } from "../config/prisma";
+import { cacheKeys, invalidarVagas } from "../cache/CacheKeys";
+import { redisCache } from "../cache/RedisCache";
 
 function converterData(data: unknown, horario: unknown) {
     if (typeof data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new Error("Data deve estar no formato YYYY-MM-DD");
@@ -10,15 +12,21 @@ function converterData(data: unknown, horario: unknown) {
 }
 
 export class VagaService {
-    listar(hemocentroId: number, apenasDisponiveis = false) {
+    async listar(hemocentroId: number, apenasDisponiveis = false) {
         if (!Number.isInteger(hemocentroId) || hemocentroId <= 0) throw new Error("Id do hemocentro inválido");
-        return prisma.vaga.findMany({
-            where: { hemocentroId, hemocentro: { status: "APROVADO" }, data: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") } },
-            orderBy: [{ data: "asc" }, { horario: "asc" }],
-            select: { id: true, hemocentroId: true, data: true, horario: true, capacidade: true, reservadas: true },
-        }).then((vagas) => apenasDisponiveis
-            ? vagas.filter((vaga) => vaga.reservadas < vaga.capacidade && new Date(`${vaga.data.toISOString().slice(0, 10)}T${vaga.horario}:00`).getTime() > Date.now())
-            : vagas);
+        return redisCache.buscarOuCarregar(
+            cacheKeys.vagasHemocentro(hemocentroId, apenasDisponiveis),
+            async () => {
+                const vagas = await prisma.vaga.findMany({
+                    where: { hemocentroId, hemocentro: { status: "APROVADO" }, data: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") } },
+                    orderBy: [{ data: "asc" }, { horario: "asc" }],
+                    select: { id: true, hemocentroId: true, data: true, horario: true, capacidade: true, reservadas: true },
+                });
+                return apenasDisponiveis
+                    ? vagas.filter((vaga) => vaga.reservadas < vaga.capacidade && new Date(`${vaga.data.toISOString().slice(0, 10)}T${vaga.horario}:00`).getTime() > Date.now())
+                    : vagas;
+            },
+        );
     }
 
     async abrir(hemocentroId: number, dados: { data: string; horario: string; capacidade: number }) {
@@ -27,10 +35,12 @@ export class VagaService {
             throw new Error("Capacidade deve ser um inteiro entre 1 e 100");
         }
         try {
-            return await prisma.vaga.create({
+            const vaga = await prisma.vaga.create({
                 data: { hemocentroId, data, horario: dados.horario, capacidade: dados.capacidade },
                 select: { id: true, hemocentroId: true, data: true, horario: true, capacidade: true, reservadas: true },
             });
+            await invalidarVagas(redisCache, hemocentroId);
+            return vaga;
         } catch (error) {
             if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
                 throw new Error("Já existe vaga para esta data e horário");
@@ -47,6 +57,8 @@ export class VagaService {
             data: { capacidade },
         });
         if (resultado.count !== 1) throw new Error("Vaga inexistente ou capacidade menor que as reservas atuais");
-        return prisma.vaga.findUnique({ where: { id: vagaId } });
+        const vaga = await prisma.vaga.findUnique({ where: { id: vagaId } });
+        await invalidarVagas(redisCache, hemocentroId);
+        return vaga;
     }
 }

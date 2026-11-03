@@ -1,4 +1,6 @@
 import { prisma } from "../config/prisma";
+import { cacheKeys, invalidarAgendamentos, invalidarVagas } from "../cache/CacheKeys";
+import { redisCache } from "../cache/RedisCache";
 import type {
     FiltrosAgendamentoHemocentroDTO,
     StatusAgendamento,
@@ -49,7 +51,7 @@ export class AgendamentoRepository {
     }
 
     async salvar(doadorId: number, hemocentroId: number, data: Date, horario: string) {
-        return prisma.$transaction(async (tx) => {
+        const agendamento = await prisma.$transaction(async (tx) => {
             const vaga = await tx.vaga.findUnique({
                 where: { hemocentroId_data_horario: { hemocentroId, data, horario } },
             });
@@ -80,10 +82,16 @@ export class AgendamentoRepository {
                 },
             });
         });
+
+        await Promise.all([
+            invalidarAgendamentos(redisCache, doadorId, hemocentroId),
+            invalidarVagas(redisCache, hemocentroId),
+        ]);
+        return agendamento;
     }
 
     async listarPorDoador(doadorId: number) {
-        return prisma.agendamento.findMany({
+        return redisCache.buscarOuCarregar(cacheKeys.agendamentosDoador(doadorId), () => prisma.agendamento.findMany({
             where: { doadorId },
             orderBy: [{ data: "asc" }, { horario: "asc" }],
             select: {
@@ -101,7 +109,7 @@ export class AgendamentoRepository {
                     },
                 },
             },
-        });
+        }));
     }
 
     /**
@@ -112,7 +120,13 @@ export class AgendamentoRepository {
         hemocentroId: number,
         filtros: FiltrosAgendamentoHemocentroDTO,
     ) {
-        return prisma.agendamento.findMany({
+        const chave = cacheKeys.agendamentosHemocentro(
+            hemocentroId,
+            filtros.status,
+            filtros.dataInicio,
+            filtros.dataFim,
+        );
+        return redisCache.buscarOuCarregar(chave, () => prisma.agendamento.findMany({
             where: {
                 hemocentroId,
                 ...(filtros.status ? { status: filtros.status } : {}),
@@ -127,7 +141,7 @@ export class AgendamentoRepository {
             },
             orderBy: [{ data: "asc" }, { horario: "asc" }],
             select: this.camposParaHemocentro,
-        });
+        }));
     }
 
     /**
@@ -175,6 +189,10 @@ export class AgendamentoRepository {
                 await tx.vaga.update({ where: { id: vagaId }, data: { reservadas: { decrement: 1 } } });
             }
         });
+        await Promise.all([
+            invalidarAgendamentos(redisCache, doadorId, hemocentroId),
+            status === "CANCELADO" ? invalidarVagas(redisCache, hemocentroId) : Promise.resolve(),
+        ]);
         return this.buscarPorIdDoHemocentro(hemocentroId, agendamentoId);
     }
 }
