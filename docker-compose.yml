@@ -35,7 +35,7 @@ services:
 
   api:
     build:
-      context: .
+      context: ./api
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-vitta}:${POSTGRES_PASSWORD:-vitta_dev}@postgres:5432/${POSTGRES_DB:-vitta}?schema=public
@@ -43,7 +43,7 @@ services:
       CPF_ENCRYPTION_KEY: ${CPF_ENCRYPTION_KEY:-vitta_dev_cpf_encryption_key_change_me_2026}
       ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-VittaAdmin@2026}
       REDIS_URL: redis://redis:6379
-      REDIS_CACHE_TTL_SECONDS: ${REDIS_CACHE_TTL_SECONDS:-60}
+      REDIS_CACHE_TTL_SECONDS: ${REDIS_CACHE_TTL_SECONDS:-900}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
@@ -61,17 +61,23 @@ services:
       retries: 12
       start_period: 20s
 
-  frontend:
+  web:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile
       args:
         EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:3000}
     ports:
-      - "${FRONTEND_PORT:-8081}:80"
+      - "${WEB_PORT:-8081}:80"
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
 volumes:
   vitta_postgres_data:

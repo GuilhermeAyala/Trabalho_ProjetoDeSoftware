@@ -1,0 +1,1 @@
+{"version":3,"file":"ScheduleModel.js","sourceRoot":"","sources":["../../../src/models/ScheduleModel.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,wBAAwB,EACxB,iBAAiB,EACjB,sBAAsB,EACtB,gBAAgB,GACjB,MAAM,2BAA2B,CAAC;AAKnC,MAAM,CAAC,MAAM,aAAa,GAAG;IAC3B,iBAAiB,EAAE,iBAAiB;IACpC,sBAAsB,EAAE,sBAAsB;IAC9C,0BAA0B,EAAE,wBAAwB;IACpD,gBAAgB;CACjB,CAAC"}

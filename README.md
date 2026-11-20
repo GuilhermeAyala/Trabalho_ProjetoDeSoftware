@@ -1,199 +1,142 @@
-# Projeto de Software: Sistema VITTA
+# VITTA
 
-O VITTA usa Docker Compose para executar o front-end, a API, o PostgreSQL e o Redis juntos. O PostgreSQL é a fonte de verdade e o Redis mantém somente caches descartáveis de agendamento, triagem e vagas.
+## Como executar o Web
 
-## Pré-requisitos
+Pré-requisitos: Docker Desktop em execução, Docker Compose v2 e portas `3000`, `5433`, `6380` e `8081` livres.
 
-Instale e abra o Docker Desktop. Espere o status indicar que ele está em execução e confirme, na raiz do repositório:
-
-```powershell
-docker version
-docker compose version
-```
-
-## Acesso do administrador
-
-Na tela inicial, escolha **Acesso do administrador**. O seed cria `admin@vitta.local` com a senha inicial `VittaAdmin@2026`, definida em `prisma/seed.ts`. Configure `ADMIN_SEED_PASSWORD` em `.env.docker` antes da primeira execução para substituí-la. O seed não altera a senha de um administrador já existente.
-
-O cadastro de hemocentro envia uma solicitação pendente. O administrador aceita ou recusa no primeiro item do menu horizontal. O hemocentro consulta a decisão ao tentar entrar: a aprovação libera o portal; a recusa é mostrada na tela. Os demais itens do menu permitem editar/excluir hemocentros, movimentar estoque, abrir horários, alterar capacidade e registrar comparecimento ou ausência. A exclusão é lógica: remove o hemocentro da busca pública e bloqueia seu acesso, preservando o histórico de doações; o administrador pode reativá-lo.
-
-Os CPFs dos doadores são armazenados com criptografia autenticada AES-256-GCM. Configure `CPF_ENCRYPTION_KEY` com pelo menos 32 caracteres e mantenha o mesmo valor enquanto existirem dados no banco; trocar ou perder a chave impede a recuperação dos CPFs já criptografados.
-
-Na área do doador, a tela de hemocentros apresenta um mapa OpenStreetMap com marcadores criados a partir da latitude e longitude de cada instituição aprovada. O carregamento dos blocos do mapa requer acesso à internet.
-
-## Comandos do Docker para o time
-
-Execute os comandos abaixo na pasta raiz do projeto.
-
-### Primeira execução ou atualização completa
-
-Crie o arquivo de configuração local uma única vez:
+Na **primeira execução**, abra o PowerShell na raiz do repositório e use:
 
 ```powershell
-Copy-Item .env.docker.example .env.docker
-```
-
-Depois construa as imagens e inicie todos os serviços:
-
-```powershell
-docker compose --env-file .env.docker up --build -d
-```
-
-Também funciona sem arquivo `.env.docker`, usando os valores padrão do `docker-compose.yml`:
-
-```powershell
-docker compose up --build -d
-```
-
-Use esse comando quando alguém alterar `Dockerfile`, `package.json`, dependências, schema Prisma ou código que será incluído nas imagens.
-
-### Conferir se iniciou corretamente
-
-```powershell
+docker compose up --build -d --remove-orphans
 docker compose ps
 ```
 
-O esperado é `postgres`, `redis` e `api` como `healthy`, e `frontend` como `running`.
+Não use `docker compose start` na primeira execução: `start` não cria nem atualiza contêineres. O comando `up --build` acima cria o banco, o Redis, a API e o Web, executa o seed e aguarda as dependências ficarem saudáveis.
 
-Endereços locais:
+> O primeiro build baixa imagens e instala dependências, portanto pode levar alguns minutos. Aguarde o comando terminar e voltar ao prompt antes de abrir o navegador.
 
-- Front-end: [http://localhost:8081](http://localhost:8081)
-- API: [http://localhost:3000](http://localhost:3000)
-- PostgreSQL: `localhost:5433`
-- Redis: `localhost:6380`
+> Se o Docker exibir `invalid file request Dockerfile`, o OneDrive transformou arquivos do projeto em placeholders. Extraia ou copie o projeto para uma pasta local fora do OneDrive, por exemplo `C:\Projetos\VITTA`, e execute novamente o mesmo comando.
 
-### Iniciar novamente após usar `stop`
+O estado esperado é `postgres`, `redis`, `api` e `web` como `healthy`. Acesse:
 
-```powershell
-docker compose start
-```
+- Web: <http://localhost:8081>
+- API: <http://localhost:3000>
 
-Esse comando inicia os contêineres que já existem sem reconstruir imagens e preserva os dados do PostgreSQL.
+O arquivo `.env.docker` é opcional. Os valores de demonstração já possuem padrões no Compose. Para personalizar portas, senhas ou segredos, copie `.env.docker.example` para `.env.docker` e execute os comandos com `docker compose --env-file .env.docker ...`.
 
-### Parar a aplicação e manter os dados
+Para encerrar sem apagar o banco:
 
 ```powershell
 docker compose stop
 ```
 
-Para retornar depois, use `docker compose start`.
-
-### Remover os contêineres e manter o banco
+Para iniciar novamente os contêineres já criados:
 
 ```powershell
-docker compose down
+docker compose start
 ```
 
-Na próxima vez, execute `docker compose up -d` ou `docker compose up --build -d`. O volume `vitta_postgres_data` permanece, portanto os dados do banco são preservados. O Redis não possui volume: seu cache é recriado a partir do PostgreSQL.
-
-### Acompanhar logs
-
-Logs de todos os serviços:
+Depois de alterar código ou trocar de versão, reconstrua com:
 
 ```powershell
-docker compose logs -f
+docker compose up --build -d --remove-orphans
 ```
 
-Somente a API:
+> `docker compose down -v` apaga definitivamente o volume local do PostgreSQL. Não use esse comando para uma parada comum.
+
+## Aplicativo mobile
+
+O aplicativo Android/iOS roda pelo Expo e, por isso, **não aparece em `docker compose ps`**. Mantenha a API iniciada pelo comando anterior e, em outro PowerShell na raiz do projeto, execute:
 
 ```powershell
-docker compose logs -f api
+Set-Location app
+npm ci
+npm start
 ```
 
-Para sair dos logs, use `Ctrl + C`. Isso não interrompe os serviços.
+O Metro usa a porta `8082`, portanto Web e App podem rodar ao mesmo tempo. Pressione `a` para abrir o Android Emulator ou leia o QR Code com o Expo Go. No celular físico, mantenha o celular e o computador na mesma rede; o App detecta automaticamente o endereço do computador usado pelo Expo. Consulte [app/README.md](app/README.md) para solução de problemas.
 
-### Reiniciar um serviço específico
+## Estrutura da entrega
 
-Por exemplo, para reiniciar apenas a API:
-
-```powershell
-docker compose restart api
+```text
+VITTA/
+├── docs/       documentação acadêmica e artefatos editáveis
+├── api/        API, Prisma, seed e testes
+├── web/        aplicação para navegador
+├── app/        aplicação Android/iOS
+├── docker-compose.yml
+└── README.md
 ```
 
-Após alterar o código da API, reconstrua somente esse serviço:
+A base Expo original atende web e mobile. Ela foi separada em `web/` e `app/` para que cada entregável tenha dependências, variáveis e comandos próprios, como solicitado. Não há aplicação desktop implementada no material recebido; não foi criada uma pasta vazia que pudesse sugerir o contrário.
+
+## Validação
 
 ```powershell
-docker compose up --build -d api
-```
-
-### Validar a aplicação
-
-Com a stack em execução, os comandos abaixo verificam a API, o front-end, o PostgreSQL e o Redis:
-
-```powershell
-curl.exe http://localhost:3000/
-curl.exe http://localhost:3000/hemocentros
-curl.exe -I http://localhost:8081/
-docker compose exec postgres pg_isready -U vitta -d vitta
-docker compose exec redis redis-cli ping
-```
-
-Para executar a validação completa do fluxo de hemocentro, que cria e remove dados temporários de teste:
-
-```powershell
-npm run test:e2e
-```
-
-Para os testes unitários e a compilação da API:
-
-```powershell
+Set-Location api
+npm ci
+npx prisma generate
 npm test
 npm run build
-```
+Set-Location ..
 
-Para verificar o TypeScript do front-end:
-
-```powershell
-Set-Location frontend
+Set-Location app
+npm ci
 npm run typecheck
 Set-Location ..
+
+Set-Location web
+npm ci
+npm run typecheck
+npm run build:web
+Set-Location ..
+
+.\validar-entrega.ps1
 ```
 
-### Reiniciar o banco do zero
+O validador aponta documentos obrigatórios ausentes, campos ainda não preenchidos e qualquer `node_modules` que possa entrar indevidamente na entrega.
+
+## Geração do arquivo de entrega
+
+Depois de resolver todas as pendências indicadas pelo validador:
 
 ```powershell
-docker compose down -v
+.\criar-entrega.ps1
 ```
 
-Esse comando remove o volume `vitta_postgres_data` e apaga todos os dados locais do PostgreSQL. Use apenas quando a equipe decidir descartar o banco local. Depois, execute:
+O script cria `VITTA-entrega.zip` sem `.git`, configurações dos agentes, arquivos `.env`, caches, builds ou diretórios `node_modules`. Abra o ZIP e confira seu conteúdo antes de enviá-lo ao AVA.
+
+## Credencial inicial de demonstração
+
+O seed cria perfis prontos para a demonstração:
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Administrador | `admin@vitta.local` | `VittaAdmin@2026` |
+| Doador | `doador.demo@vitta.local` | `senha-demonstracao` |
+| Hemocentro Central | `hemocentro.central@vitta.local` | `VittaHemocentro@2026` |
+
+A senha do administrador pode ser substituída com `ADMIN_SEED_PASSWORD` antes da primeira execução. O seed não redefine uma senha já gravada.
+
+## Redis e cache
+
+O Redis é um cache descartável; o PostgreSQL continua sendo a fonte de verdade. Com a pilha Docker em execução, verifique a saúde do cache por HTTP:
 
 ```powershell
-docker compose up --build -d
+curl.exe http://localhost:3000/health
 ```
 
-## Configuração para cada integrante
-
-Cada colega deve criar sua própria cópia de `.env.docker` a partir de `.env.docker.example`. Os serviços e o banco executados no computador de uma pessoa não são compartilhados automaticamente com as demais.
-
-Para abrir o front-end em outro dispositivo da mesma rede, encontre o IPv4 com `ipconfig`, altere `EXPO_PUBLIC_API_URL` em `.env.docker` para o IP da máquina, por exemplo:
-
-```env
-EXPO_PUBLIC_API_URL=http://192.168.1.50:3000
-```
-
-Em seguida, reconstrua o front-end:
+O campo `redis` deve retornar `ok`. Para inspecionar diretamente as chaves criadas após navegar pelas telas que consultam agendamentos, vagas ou triagens:
 
 ```powershell
-docker compose --env-file .env.docker up --build -d frontend
+docker compose exec redis redis-cli ping
+docker compose exec redis redis-cli --scan --pattern "vitta:*"
+docker compose exec redis redis-cli INFO keyspace
 ```
 
-O outro dispositivo poderá acessar `http://192.168.1.50:8081`. Se necessário, libere as portas `8081` e `3000` no Firewall do Windows.
+O cache começa vazio e suas chaves expiram em 15 minutos (900 segundos) por padrão. Isso é esperado.
 
-## Problemas frequentes
+## Links do projeto
 
-- `permission denied` ou erro de conexão ao Docker: abra o Docker Desktop e espere ele concluir a inicialização.
-- Porta `3000`, `5433` ou `8081` ocupada: pare o processo que usa a porta ou ajuste `API_PORT`, `POSTGRES_PORT` ou `FRONTEND_PORT` em `.env.docker`.
-- API não inicia depois de uma alteração no schema: confira `docker compose logs api`. O Compose sincroniza o schema com `prisma db push` e executa o seed durante a inicialização.
-- Não use `docker compose down -v` para uma simples parada: ele apaga o banco local.
-
-## Links
-
-- Protótipo no Figma: https://www.figma.com/proto/NkLFRu8mj07xEIGy3b4ddk/VITTA?node-id=1-2&t=f3YzHBQHA5YRVyxG-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=1%3A2
-- Deploy: https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg
-
-
-## ligar, desligar, primeira vez usando e etc 
-quando alterar o codigo ou ligar pela primeira vez: docker compose up --build -d
-ligar: docker compose start
-desligar:docker compose stop
-verificar status: docker compose ps
+- Protótipo: <https://www.figma.com/proto/NkLFRu8mj07xEIGy3b4ddk/VITTA?node-id=1-2&t=f3YzHBQHA5YRVyxG-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=1%3A2>
+- Deploy informado no projeto: <https://trabalho-projeto-de-software-9myezbtg7-projeto-vitta1.vercel.app?_vercel_share=611vkzsBz5Ztj6wsWSFyjPwhDdRfkMMg>

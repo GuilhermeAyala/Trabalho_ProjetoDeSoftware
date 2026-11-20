@@ -1,0 +1,1 @@
+{"version":3,"file":"VoucherDetailsScreen.d.ts","sourceRoot":"","sources":["VoucherDetailsScreen.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,sBAAsB,EAAE,MAAM,gCAAgC,CAAC;AAQ7E,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,oBAAoB,CAAC;AAE7D,KAAK,yBAAyB,GAAG,sBAAsB,CAAC,kBAAkB,EAAE,gBAAgB,CAAC,CAAC;AAE9F,wBAAgB,oBAAoB,CAAC,EAAE,UAAU,EAAE,KAAK,EAAE,EAAE,yBAAyB,2CA0CpF"}

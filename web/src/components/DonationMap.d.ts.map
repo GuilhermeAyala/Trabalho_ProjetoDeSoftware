@@ -1,0 +1,1 @@
+{"version":3,"file":"DonationMap.d.ts","sourceRoot":"","sources":["../../../src/components/DonationMap.tsx"],"names":[],"mappings":"AAIA,OAAO,EAAyB,KAAK,gBAAgB,EAAE,MAAM,mBAAmB,CAAC;AAEjF,KAAK,KAAK,GAAG;IACX,WAAW,EAAE,gBAAgB,EAAE,CAAC;CACjC,CAAC;AAEF,wBAAgB,WAAW,CAAC,EAAE,WAAW,EAAE,EAAE,KAAK,2CAajD"}
