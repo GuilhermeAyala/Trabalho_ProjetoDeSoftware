@@ -6,7 +6,7 @@ Pré-requisitos:
 
 - Node.js 22 LTS e npm;
 - API VITTA em execução;
-- para dispositivo físico: Expo Go compatível com Expo SDK 54 e celular na mesma rede do computador;
+- para dispositivo físico: Expo Go compatível com Expo SDK 58 e celular na mesma rede do computador;
 - para emulador: Android Studio/Android Emulator; no macOS, o iOS Simulator também pode ser usado.
 
 No PowerShell, a partir da raiz do projeto:
