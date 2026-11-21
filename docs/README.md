@@ -6,12 +6,8 @@
 
 | Nome completo | Matrícula | Turma |
 |---|---|---|
-| Arthur Ribeiro Vitorino | `[PREENCHER]` | `[PREENCHER]` |
-| Dimitri Kael Pires Vieira | `[PREENCHER]` | `[PREENCHER]` |
-| Enzo Gomide Martins | `[PREENCHER]` | `[PREENCHER]` |
-| Guilherme Ayala Cysne | `[PREENCHER]` | `[PREENCHER]` |
-| Gustavo `[PREENCHER SOBRENOME]` | `[PREENCHER]` | `[PREENCHER]` |
-| João Neirelli | `[PREENCHER]` | `[PREENCHER]` |
+| Guilherme Ayala Cysne | `[uc23100516]` | `[GPE17M80586]` |
+
 
 ## Vídeo de apresentação
 
@@ -23,7 +19,7 @@ Antes do envio, todos os integrantes devem abrir o link em uma janela anônima e
 
 | Entregável | Situação atual |
 |---|---|
-| `BMC.pdf` ou `BMC.md` | **Ausente — adicionar versão atualizada** |
+| `BMC.pdf` ou `BMC.md` | **PRESENTE EM NA PASTA docs COMO BMC.PDF** |
 | `DADOS.pdf` | **Ausente — adicionar documentação do modelo de dados** |
 | Arquivos editáveis dos modelos e diagramas | Há documentos `.docx`; revisar se todos os editáveis usados no semestre estão presentes |
 | Propostas e demais documentos do semestre anterior | Revisar a completude com o grupo |
