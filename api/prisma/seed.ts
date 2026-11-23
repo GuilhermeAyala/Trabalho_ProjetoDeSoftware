@@ -1,6 +1,7 @@
 import { prisma } from "../src/config/prisma";
 import { hashSenha } from "../src/service/HemocentroAuthService";
 import { criptografarCpf } from "../src/security/CpfEncryption";
+import { TIPOS_SANGUINEOS } from "../src/dto/EstoqueDTO";
 
 // Credenciais iniciais para o ambiente de demonstração. Troque ADMIN_SEED_PASSWORD
 // antes de executar o seed em qualquer ambiente compartilhado.
@@ -93,6 +94,27 @@ async function criarHemocentrosDemonstracao() {
         },
         select: { id: true },
     });
+
+    // Completa também bancos que já foram populados por versões anteriores do
+    // seed. Duplicatas são ignoradas e as quantidades atuais são preservadas.
+    const hemocentros = await prisma.hemocentro.findMany({
+        where: {
+            OR: HEMOCENTROS_DEMONSTRACAO.map(({ nome, endereco }) => ({ nome, endereco })),
+        },
+        select: { id: true },
+    });
+    await prisma.estoque.createMany({
+        data: hemocentros.flatMap(({ id: hemocentroId }) =>
+            TIPOS_SANGUINEOS.map((tipoSanguineo) => ({
+                hemocentroId,
+                tipoSanguineo,
+                quantidade: 0,
+                nivel: "ESGOTADO",
+            })),
+        ),
+        skipDuplicates: true,
+    });
+
     const contaExistente = await prisma.hemocentroConta.findUnique({
         where: { hemocentroId: hemocentro.id },
         select: { id: true },

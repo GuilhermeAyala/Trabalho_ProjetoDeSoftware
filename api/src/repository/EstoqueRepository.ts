@@ -1,8 +1,22 @@
 import { prisma } from "../config/prisma";
-import { nivelDoEstoque, type MovimentarEstoqueDTO } from "../dto/EstoqueDTO";
+import { nivelDoEstoque, TIPOS_SANGUINEOS, type MovimentarEstoqueDTO } from "../dto/EstoqueDTO";
 
 export class EstoqueRepository {
-    listar(hemocentroId: number) {
+    private garantirTipos(hemocentroId: number) {
+        return prisma.estoque.createMany({
+            data: TIPOS_SANGUINEOS.map((tipoSanguineo) => ({
+                hemocentroId,
+                tipoSanguineo,
+                quantidade: 0,
+                nivel: "ESGOTADO",
+            })),
+            skipDuplicates: true,
+        });
+    }
+
+    async listar(hemocentroId: number) {
+        // Repara registros antigos sem alterar quantidades já existentes.
+        await this.garantirTipos(hemocentroId);
         return prisma.estoque.findMany({
             where: { hemocentroId }, orderBy: { tipoSanguineo: "asc" },
             select: { id: true, tipoSanguineo: true, quantidade: true, nivel: true },
@@ -20,10 +34,11 @@ export class EstoqueRepository {
 
     async movimentar(hemocentroId: number, dados: MovimentarEstoqueDTO) {
         return prisma.$transaction(async (tx) => {
-            const estoque = await tx.estoque.findUnique({
+            const estoque = await tx.estoque.upsert({
                 where: { hemocentroId_tipoSanguineo: { hemocentroId, tipoSanguineo: dados.tipoSanguineo } },
+                create: { hemocentroId, tipoSanguineo: dados.tipoSanguineo, quantidade: 0, nivel: "ESGOTADO" },
+                update: {},
             });
-            if (!estoque) throw new Error("Estoque não encontrado");
             const quantidadeNova = estoque.quantidade + (dados.tipo === "ENTRADA" ? dados.quantidade : -dados.quantidade);
             if (quantidadeNova < 0) throw new Error("Quantidade insuficiente no estoque");
             const atualizado = await tx.estoque.updateMany({
