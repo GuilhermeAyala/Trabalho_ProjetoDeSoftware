@@ -20,8 +20,8 @@ Antes do envio, todos os integrantes devem abrir o link em uma janela anônima e
 | Entregável | Situação atual |
 |---|---|
 | `BMC.pdf` ou `BMC.md` | **PRESENTE EM NA PASTA docs COMO BMC.PDF** |
-| `DADOS.pdf` | **Ausente — adicionar documentação do modelo de dados** |
+| `DADOS.pdf` | **PRESENTE EM NA PASTA docs COMO DADOS.PDF** |
 | Arquivos editáveis dos modelos e diagramas | Há documentos `.docx`; revisar se todos os editáveis usados no semestre estão presentes |
 | Propostas e demais documentos do semestre anterior | Revisar a completude com o grupo |
 
-Os materiais existentes foram preservados nas pastas `DOCX/`, `PDFs/` e `implementações/`. Os documentos de implementação são históricos e, por isso, algumas referências internas ainda usam o antigo nome `frontend/`; na estrutura final, o código correspondente está em `app/` e `web/`. Consulte também [PENDENCIAS_ENTREGA.md](PENDENCIAS_ENTREGA.md).
+Os materiais existentes foram preservados nas pastas `DOCX/`, `PDFs/` e `implementações/`. Os documentos de implementação são históricos e, por isso, algumas referências internas ainda usam o antigo nome `frontend/`; na estrutura final, o código correspondente está em `app/` e `web/`. 
