@@ -11,7 +11,7 @@
 
 ## Vídeo de apresentação
 
-**Link do YouTube (visibilidade “Não listado”):** `[PREENCHER URL]`
+**Link do YouTube (visibilidade “Não listado”):** `[https://youtu.be/xTgEJDL7KYY]`
 
 Antes do envio, todos os integrantes devem abrir o link em uma janela anônima e confirmar que o vídeo está acessível. A gravação deve ter aproximadamente 15 minutos, mostrar somente as aplicações funcionando, simular a experiência do usuário final e evitar pessoas ou explicações sobre linguagens, frameworks e bibliotecas.
 
